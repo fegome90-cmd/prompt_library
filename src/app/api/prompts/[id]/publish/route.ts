@@ -1,8 +1,8 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { AuditService } from '@/services/audit.service';
 
 // POST - Publicar un prompt (cambiar estado a published)
 // WO-0003: Validar reviewer antes de crear auditLog
@@ -76,16 +76,13 @@ export async function POST(
     });
     
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: reviewer,
-        action: 'publish',
-        details: JSON.stringify({ 
-          previousStatus: existingPrompt.status,
-          version: existingPrompt.version,
-        }),
+    await AuditService.log({
+      promptId: id,
+      userId: reviewer,
+      action: 'publish',
+      details: {
+        previousStatus: existingPrompt.status,
+        version: existingPrompt.version,
       },
     });
     

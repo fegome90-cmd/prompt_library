@@ -15,12 +15,8 @@ import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { updatePromptSchema, formatZodError } from '@/lib/validators/prompt';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  RATE_LIMIT_PRESETS,
-  createRateLimitResponse,
-} from '@/lib/rate-limit';
+import { applyRateLimit } from '@/services/rate-limit.service';
+import { AuditService } from '@/services/audit.service';
 import {
   getUserWithDevFallback,
   canModifyPrompt,
@@ -91,11 +87,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // SECURITY: Rate limiting
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.standard);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'standard');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
@@ -165,7 +158,7 @@ export async function PUT(
           promptId: id,
           version: existingPrompt.version,
           body: existingPrompt.body,
-          variablesSchema: existingPrompt.variablesSchema,
+          variablesSchema: existingPrompt.variablesSchema ?? [],
           outputFormat: existingPrompt.outputFormat,
           changelog: changelog || 'Actualización',
           authorId: existingPrompt.authorId,
@@ -179,11 +172,10 @@ export async function PUT(
     if (description !== undefined) updateData.description = description;
     if (promptBody !== undefined) updateData.body = promptBody;
     if (category !== undefined) updateData.category = category;
-    if (tags !== undefined) updateData.tags = JSON.stringify(tags);
-    if (variablesSchema !== undefined)
-      updateData.variablesSchema = JSON.stringify(variablesSchema);
+    if (tags !== undefined) updateData.tags = tags;
+    if (variablesSchema !== undefined) updateData.variablesSchema = variablesSchema;
     if (outputFormat !== undefined) updateData.outputFormat = outputFormat;
-    if (examples !== undefined) updateData.examples = JSON.stringify(examples);
+    if (examples !== undefined) updateData.examples = examples;
     if (riskLevel !== undefined) updateData.riskLevel = riskLevel;
     if (changelog !== undefined) updateData.changelog = changelog;
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite;
@@ -204,14 +196,11 @@ export async function PUT(
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: currentUser.id,
-        action: 'update',
-        details: JSON.stringify({ changes: Object.keys(updateData), changelog }),
-      },
+    await AuditService.log({
+      promptId: id,
+      userId: currentUser.id,
+      action: 'update',
+      details: { changes: Object.keys(updateData), changelog },
     });
 
     return NextResponse.json(prompt);
@@ -227,11 +216,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // SECURITY: Rate limiting (strict for destructive operations)
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.strict);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'strict');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
@@ -273,14 +259,11 @@ export async function DELETE(
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: currentUser.id,
-        action: 'delete',
-        details: JSON.stringify({ title: existingPrompt.title }),
-      },
+    await AuditService.log({
+      promptId: id,
+      userId: currentUser.id,
+      action: 'delete',
+      details: { title: existingPrompt.title },
     });
 
     return NextResponse.json({ success: true, message: 'Prompt marcado como deprecado' });

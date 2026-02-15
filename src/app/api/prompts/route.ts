@@ -9,12 +9,8 @@ import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createPromptSchema, formatZodError } from '@/lib/validators/prompt';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  RATE_LIMIT_PRESETS,
-  createRateLimitResponse,
-} from '@/lib/rate-limit';
+import { applyRateLimit } from '@/services/rate-limit.service';
+import { AuditService } from '@/services/audit.service';
 import { getUserWithDevFallback } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
@@ -56,9 +52,11 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { title: { contains: search } },
         { description: { contains: search } },
-        { tags: { contains: search } },
       ];
     }
+
+    // FIX-003: Exclude soft-deleted prompts
+    where.deletedAt = null;
 
     // WO-0008: Si hay paginación, usar formato paginado
     if (pageParam || limitParam) {
@@ -111,11 +109,8 @@ export async function GET(request: NextRequest) {
 // WO-0005: Validación con Zod
 export async function POST(request: NextRequest) {
   // SECURITY: Rate limiting
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.standard);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'standard');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
@@ -148,10 +143,10 @@ export async function POST(request: NextRequest) {
         description: data.description,
         body: data.body,
         category: data.category,
-        tags: JSON.stringify(data.tags),
-        variablesSchema: JSON.stringify(data.variablesSchema),
+        tags: data.tags,
+        variablesSchema: data.variablesSchema,
         outputFormat: data.outputFormat,
-        examples: JSON.stringify(data.examples),
+        examples: data.examples,
         riskLevel: data.riskLevel,
         status: 'draft',
         authorId: authorId,
@@ -165,14 +160,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: prompt.id,
-        userId: authorId,
-        action: 'create',
-        details: JSON.stringify({ title: data.title, category: data.category }),
-      },
+    await AuditService.log({
+      promptId: prompt.id,
+      userId: authorId,
+      action: 'create',
+      details: { title: data.title, category: data.category },
     });
 
     return NextResponse.json(prompt);
