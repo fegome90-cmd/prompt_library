@@ -34,9 +34,9 @@ export function StatsDashboard() {
   const { overview, topPrompts, bestRatedPrompts, problematicPrompts, usageByCategory } = stats;
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="stats-dashboard">
       {/* KPIs principales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="kpi-grid">
         <KPICard
           title="Prompts Publicados"
           value={overview.publishedPrompts}

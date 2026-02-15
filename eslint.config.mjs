@@ -8,16 +8,16 @@ const __dirname = dirname(__filename);
 
 const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
   rules: {
-    // TypeScript rules - Pass 1: Enable basic quality
-    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
-    "@typescript-eslint/no-explicit-any": "off", // Pass 2
-    "@typescript-eslint/no-non-null-assertion": "off", // Pass 2
+    // TypeScript rules - Pass 1+2: Enable quality rules
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/prefer-as-const": "warn",
     "@typescript-eslint/no-unused-disable-directive": "off",
 
-    // React rules - Pass 1: Enable basic quality
-    "react-hooks/exhaustive-deps": "off", // Pass 3
+    // React rules - Pass 1+3: Enable quality rules
+    "react-hooks/exhaustive-deps": "warn",
     "react-hooks/purity": "off",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
@@ -31,7 +31,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // General JavaScript rules - Pass 1: Enable basic quality
     "prefer-const": "warn",
     "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
-    "no-console": "warn",
+    "no-console": ["warn", { allow: ["warn", "error"] }],
     "no-debugger": "warn",
     "no-empty": "off",
     "no-irregular-whitespace": "off",
@@ -44,7 +44,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "tests/e2e/**", "scripts/**"]
 }];
 
 export default eslintConfig;

@@ -62,7 +62,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
       setGeneratedText('');
       setCopied(false);
     }
-  }, [prompt?.id, parsedSchema]);
+  }, [prompt, parsedSchema]);
   
   // Generar el texto del prompt
   const generateText = useCallback(() => {
@@ -152,7 +152,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
     };
 
     return (
-      <Badge className={colors[overallRisk]}>
+      <Badge className={colors[overallRisk]} data-testid="risk-badge">
         {labels[overallRisk]}
       </Badge>
     );
@@ -162,7 +162,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" data-testid="composer-dialog">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -279,7 +279,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
             </Card>
             
             {/* Panel de preview */}
-            <Card>
+            <Card data-testid="preview-panel">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -323,11 +323,11 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
             Copia y pega este prompt en ChatGPT, Copilot o tu IA preferida
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="close-button">
               <ArrowLeft weight="regular" className="h-4 w-4 mr-2" />
               Cerrar
             </Button>
-            <Button onClick={handleCopy} disabled={!generatedText}>
+            <Button onClick={handleCopy} disabled={!generatedText} data-testid="copy-button">
               {copied ? (
                 <>
                   <Check weight="regular" className="h-4 w-4 mr-2" />

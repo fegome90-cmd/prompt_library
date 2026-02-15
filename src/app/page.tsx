@@ -242,6 +242,7 @@ export default function PromptManagerPage() {
                 <div className="relative flex-1 sm:w-64">
                   <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    data-testid="search-input"
                     placeholder="Buscar prompts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -263,12 +264,13 @@ export default function PromptManagerPage() {
                   </SelectContent>
                 </Select>
                 
-                <div className="flex border rounded-lg">
+                <div className="flex border rounded-lg" data-testid="view-toggle">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
                     className="rounded-r-none"
                     onClick={() => setViewMode('grid')}
+                    data-testid="view-toggle-grid"
                   >
                     <GridFour weight="regular" className="h-4 w-4" />
                   </Button>
@@ -277,6 +279,7 @@ export default function PromptManagerPage() {
                     size="sm"
                     className="rounded-l-none"
                     onClick={() => setViewMode('list')}
+                    data-testid="view-toggle-list"
                   >
                     <List weight="regular" className="h-4 w-4" />
                   </Button>
@@ -436,6 +439,7 @@ function PromptCard({
 
   return (
     <div
+      data-testid="prompt-card"
       className="group rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
       onClick={onSelect}
     >

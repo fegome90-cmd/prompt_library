@@ -440,7 +440,6 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
                 <p className="text-xs text-muted-foreground">
                   Usa llaves para variables: {"{nombre}"}, {"{departamento}"}
                 </p>
-              </div>
               
               {/* Formato de salida */}
               <div className="space-y-2">
