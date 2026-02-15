@@ -160,7 +160,7 @@ export function StatsDashboard() {
               ))}
               {problematicPrompts.length === 0 && (
                 <div className="text-center py-4">
-                  <div className="text-emerald-500 mb-2">✓</div>
+                  <div className="text-success mb-2">✓</div>
                   <p className="text-sm text-muted-foreground">
                     ¡Todos los prompts tienen buena recepción!
                   </p>

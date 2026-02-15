@@ -17,6 +17,7 @@ import {
 } from '@/lib/rate-limit';
 import { getUserWithDevFallback } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 // GET - Listar todos los prompts
 // WO-0008: Paginación opcional
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación POST');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación POST');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
     const validation = createPromptSchema.safeParse(body);
 
     if (!validation.success) {
-      console.warn('[WO-0005] Validación fallida:', validation.error.issues);
+      logger.warn('[WO-0005] Validación fallida', { issues: validation.error.issues });
       return NextResponse.json(formatZodError(validation.error), { status: 400 });
     }
 

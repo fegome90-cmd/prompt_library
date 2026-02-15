@@ -8,6 +8,7 @@ import {
   createRateLimitResponse,
 } from '@/lib/rate-limit';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 /**
  * SECURITY: Endpoint de seed protegido
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   const clientId = getClientIdentifier(request);
   const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.strict);
   if (!rateLimit.success) {
-    console.warn('[SECURITY] Rate limit exceeded en /api/seed');
+    logger.warn('[SECURITY] Rate limit exceeded en /api/seed');
     return createRateLimitResponse(rateLimit) as NextResponse;
   }
 
@@ -32,17 +33,17 @@ export async function GET(request: NextRequest) {
   const isAdmin = process.env.NODE_ENV === 'development';
   const adminSecret = request.headers.get('x-admin-secret');
   const expectedSecret = process.env.ADMIN_SECRET;
-  
+
   if (!isAdmin && (!expectedSecret || adminSecret !== expectedSecret)) {
-    console.warn('[SECURITY] Intento de acceso no autorizado a /api/seed');
+    logger.warn('[SECURITY] Intento de acceso no autorizado a /api/seed');
     return NextResponse.json(
       { error: 'No autorizado' },
       { status: 403 }
     );
   }
-  
+
   // SECURITY: Log access
-  console.log(`[SEED] Access granted to ${isAdmin ? 'development' : 'admin'}`);
+  logger.info(`[SEED] Access granted to ${isAdmin ? 'development' : 'admin'}`);
   
   try {
     // Crear usuario por defecto
@@ -1748,7 +1749,7 @@ Alta/Media/Baja`,
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         errors.push(`Prompt "${promptData.title}": ${errorMsg}`);
-        console.error(`Error creando prompt "${promptData.title}":`, err);
+        logger.error(`Error creando prompt "${promptData.title}"`, { error: errorMsg });
       }
     }
 

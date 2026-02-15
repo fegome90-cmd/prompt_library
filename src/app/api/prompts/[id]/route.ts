@@ -27,6 +27,7 @@ import {
   canDeletePrompt,
 } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 // WO-0009: Función de validación de versión
 function isValidVersion(version: string): boolean {
@@ -37,7 +38,7 @@ function isValidVersion(version: string): boolean {
 // WO-0009: Función de incremento de versión
 function incrementVersion(version: string): string {
   if (!isValidVersion(version)) {
-    console.warn(`[WO-0009] Versión inválida "${version}", reseteando a 1.0`);
+    logger.warn(`[WO-0009] Versión inválida "${version}", reseteando a 1.0`);
     return '1.0';
   }
 
@@ -101,7 +102,7 @@ export async function PUT(
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación PUT');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación PUT');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -112,7 +113,7 @@ export async function PUT(
     const validation = updatePromptSchema.safeParse(body);
 
     if (!validation.success) {
-      console.warn('[WO-0005] Validación fallida:', validation.error.issues);
+      logger.warn('[WO-0005] Validación fallida', { issues: validation.error.issues });
       return NextResponse.json(
         formatZodError(validation.error),
         { status: 400 }
@@ -131,7 +132,7 @@ export async function PUT(
 
     // SECURITY: Validación de permisos con roles
     if (!canModifyPrompt(currentUser, existingPrompt.authorId)) {
-      console.warn(
+      logger.warn(
         `[SECURITY] Usuario ${currentUser.id} (${currentUser.role}) intentó modificar prompt de otro usuario`
       );
       return NextResponse.json(
@@ -237,7 +238,7 @@ export async function DELETE(
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación DELETE');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación DELETE');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -253,7 +254,7 @@ export async function DELETE(
 
     // SECURITY: Only owners and editors can delete
     if (!canDeletePrompt(currentUser)) {
-      console.warn(
+      logger.warn(
         `[SECURITY] Usuario ${currentUser.id} (${currentUser.role}) intentó eliminar prompt - rol insuficiente`
       );
       return NextResponse.json(

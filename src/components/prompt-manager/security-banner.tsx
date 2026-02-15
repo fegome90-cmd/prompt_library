@@ -68,12 +68,12 @@ export function SecurityBanner({ text = '', onRiskDetected, showDetection = fals
     <div className="space-y-2">
       {/* Banner fijo de seguridad */}
       {!dismissed && (
-        <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
-          <ShieldCheck weight="regular" className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800 dark:text-amber-200 text-sm font-medium">
+        <Alert className="bg-warning/10 border-warning/30">
+          <ShieldCheck weight="regular" className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning text-sm font-medium">
             Recordatorio de Seguridad
           </AlertTitle>
-          <AlertDescription className="text-amber-700 dark:text-amber-300 text-xs">
+          <AlertDescription className="text-warning/80 text-xs">
             <p>
               <strong>No pegues datos sensibles:</strong> RUT, datos clínicos, sueldos, 
               datos bancarios, direcciones personales, listas de clientes/pacientes.

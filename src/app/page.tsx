@@ -481,7 +481,7 @@ function PromptCard({
             {rating !== null && (
               <>
                 <span>•</span>
-                <span className="text-emerald-500">{rating}% útil</span>
+                <span className="text-success">{rating}% útil</span>
               </>
             )}
           </div>

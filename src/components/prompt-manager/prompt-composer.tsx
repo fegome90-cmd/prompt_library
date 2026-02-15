@@ -27,6 +27,7 @@ import { SecurityBanner } from './security-banner';
 import { useStore } from '@/lib/store';
 import { getRiskLevel } from '@/lib/pii-detector';
 import { parseTags, parseVariablesSchema } from '@/lib/prompt-utils';
+import { logger } from '@/lib/logger';
 import type { Prompt, VariableSchema } from '@/types';
 import { toast } from 'sonner';
 
@@ -128,7 +129,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
       
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Error al copiar:', error);
+      logger.error('Error al copiar', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Error al copiar');
     }
   };
@@ -139,17 +140,17 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
   
   const getRiskBadge = () => {
     const colors = {
-      low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      low: 'bg-success/10 text-success',
+      medium: 'bg-warning/10 text-warning',
+      high: 'bg-destructive/10 text-destructive',
     };
-    
+
     const labels = {
       low: 'Bajo riesgo',
       medium: 'Riesgo medio',
       high: 'Alto riesgo',
     };
-    
+
     return (
       <Badge className={colors[overallRisk]}>
         {labels[overallRisk]}
