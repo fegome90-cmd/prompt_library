@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AuditLog {
+  id        String   @id
+  promptId  String?
+  userId    String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
+  Prompt    Prompt?  @relation(fields: [promptId], references: [id])
+
+  @@index([action])
+  @@index([userId])
+  @@index([promptId])
+}
+
+model Category {
+  id          String   @id
+  name        String   @unique
+  description String?
+  color       String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+}
+
+model Prompt {
+  id                           String          @id
+  title                        String
+  description                  String
+  body                         String
+  category                     String
+  tags                         String
+  variablesSchema              String          @default("[]")
+  outputFormat                 String?
+  examples                     String?
+  status                       String          @default("draft")
+  riskLevel                    String          @default("low")
+  version                      String          @default("1.0.0")
+  changelog                    String?
+  useCount                     Int             @default(0)
+  thumbsUp                     Int             @default(0)
+  thumbsDown                   Int             @default(0)
+  isFavorite                   Boolean         @default(false)
+  authorId                     String
+  reviewerId                   String?
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime
+  publishedAt                  DateTime?
+  deprecatedAt                 DateTime?
+  AuditLog                     AuditLog[]
+  User_Prompt_reviewerIdToUser User?           @relation("Prompt_reviewerIdToUser", fields: [reviewerId], references: [id])
+  User_Prompt_authorIdToUser   User            @relation("Prompt_authorIdToUser", fields: [authorId], references: [id])
+  PromptUsage                  PromptUsage[]
+  PromptVersion                PromptVersion[]
+
+  @@index([updatedAt])
+  @@index([category, status])
+  @@index([isFavorite])
+  @@index([authorId])
+  @@index([status])
+  @@index([category])
+}
+
+model PromptUsage {
+  id            String   @id
+  promptId      String
+  userId        String?
+  feedback      String?
+  comment       String?
+  dataRiskLevel String?
+  variablesUsed String?
+  createdAt     DateTime @default(now())
+  User          User?    @relation(fields: [userId], references: [id])
+  Prompt        Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([promptId])
+  @@index([createdAt])              // Para queries de "feedback reciente"
+}
+
+model PromptVersion {
+  id              String   @id
+  promptId        String
+  version         String
+  body            String
+  variablesSchema String
+  outputFormat    String?
+  changelog       String?
+  authorId        String
+  createdAt       DateTime @default(now())
+  Prompt          Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, version])
+  @@index([promptId])
+}
+
+model User {
+  id                             String        @id
+  email                          String        @unique
+  name                           String
+  password                       String?       // Hashed password (bcrypt), nullable for migration/OAuth users
+  emailVerified                  DateTime?
+  image                          String?
+  role                           String        @default("user")
+  createdAt                      DateTime      @default(now())
+  updatedAt                      DateTime
+  accounts                       Account[]
+  sessions                       Session[]
+  AuditLog                       AuditLog[]
+  Prompt_Prompt_reviewerIdToUser Prompt[]      @relation("Prompt_reviewerIdToUser")
+  Prompt_Prompt_authorIdToUser   Prompt[]      @relation("Prompt_authorIdToUser")
+  PromptUsage                    PromptUsage[]
+}
+
+// NextAuth - Account model for OAuth providers
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// NextAuth - Session model for database sessions
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// NextAuth - Verification token for email verification
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

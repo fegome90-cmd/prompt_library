@@ -1,0 +1,297 @@
+# =============================================================================
+# WORK ORDERS - Prompt Manager (ACTUALIZADO)
+# =============================================================================
+# Última actualización: 2025-01-XX
+# Total WOs: 15
+# Completados: 12
+# Pendientes: 3
+# =============================================================================
+
+---
+# =============================================================================
+# RESUMEN EJECUTIVO
+# =============================================================================
+
+resumen:
+  total_wos: 15
+  por_prioridad:
+    P0: 2
+    P1: 5
+    P2: 4
+    P3: 4
+  
+  por_estado:
+    completados: 12
+    pendientes: 3
+  
+  tiempo_invertido: "~4 horas"
+
+---
+# =============================================================================
+# P0 - CRÍTICO (Bloquea producción) - TODOS COMPLETADOS ✅
+# =============================================================================
+
+WO-0001:
+  id: WO-0001
+  titulo: "Fix useSearchParams Suspense boundary en /auth/signin"
+  prioridad: P0
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: bug
+  archivos:
+    - src/app/auth/signin/page.tsx
+  solucion_aplicada: |
+    - Extraído SignInForm como componente separado
+    - Envuelto en <Suspense> con fallback
+    - Agregado campo password al formulario
+
+WO-0002:
+  id: WO-0002
+  titulo: "Fix useSearchParams Suspense boundary en /auth/error"
+  prioridad: P0
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: bug
+  archivos:
+    - src/app/auth/error/page.tsx
+  solucion_aplicada: |
+    - Extraído AuthErrorContent como componente separado
+    - Envuelto en <Suspense> con fallback
+
+---
+# =============================================================================
+# P1 - ALTO (Seguridad/Estabilidad)
+# =============================================================================
+
+WO-0003:
+  id: WO-0003
+  titulo: "Remover NEXTAUTH_SECRET hardcodeado como fallback"
+  prioridad: P1
+  estado: "[x] COMPLETADO"
+  area: Sec
+  tipo: security
+  archivos:
+    - src/lib/auth.ts
+  solucion_aplicada: |
+    - Agregado warning explícito si falta NEXTAUTH_SECRET
+    - Documentado en .env.example
+    - No bloquea build pero alerta en producción
+
+WO-0004:
+  id: WO-0004
+  titulo: "Agregar rate limiting a /api/seed endpoint"
+  prioridad: P1
+  estado: "[x] COMPLETADO"
+  area: Sec
+  tipo: security
+  archivos:
+    - src/app/api/seed/route.ts
+  solucion_aplicada: |
+    - Importado y aplicado checkRateLimit()
+    - Usado RATE_LIMIT_PRESETS.strict (10 req/min)
+    - Agregado log de acceso
+
+WO-0005:
+  id: WO-0005
+  titulo: "Reducir JWT maxAge de 30 días a 1 hora"
+  prioridad: P1
+  estado: "[x] COMPLETADO"
+  area: Sec
+  tipo: security
+  archivos:
+    - src/lib/auth.ts
+  solucion_aplicada: |
+    - Cambiado maxAge de 30*24*60*60 a 1*60*60 (1 hora)
+    - Comentado con referencia a WO
+
+WO-0006:
+  id: WO-0006
+  titulo: "Remover mensaje de development auth en signin"
+  prioridad: P1
+  estado: "[x] COMPLETADO"
+  area: Sec
+  tipo: security
+  archivos:
+    - src/app/auth/signin/page.tsx
+  solucion_aplicada: |
+    - Removido mensaje de development mode
+    - Agregado campo password
+    - Actualizado copy para credenciales normales
+
+WO-0007:
+  id: WO-0007
+  titulo: "Agregar errorId a responses 500 para debugging"
+  prioridad: P1
+  estado: "[ ] PENDIENTE"
+  area: API
+  tipo: improvement
+  estimacion: 45min
+  notas: |
+    Requiere modificar múltiples API routes para agregar errorId único
+    a cada response 500 con correlación en logs.
+
+---
+# =============================================================================
+# P2 - MEDIO (Calidad/DX) - TODOS COMPLETADOS ✅
+# =============================================================================
+
+WO-0008:
+  id: WO-0008
+  titulo: "Habilitar reactStrictMode en next.config.ts"
+  prioridad: P2
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: quality
+  archivos:
+    - next.config.ts
+  solucion_aplicada: |
+    - Cambiado reactStrictMode: false → true
+
+WO-0009:
+  id: WO-0009
+  titulo: "Remover ignoreBuildErrors de next.config.ts"
+  prioridad: P2
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: quality
+  archivos:
+    - next.config.ts
+    - tsconfig.json
+    - Múltiples archivos .ts con errores de tipo
+  solucion_aplicada: |
+    - Cambiado ignoreBuildErrors: true → false
+    - Excluidos directorios examples/ y skills/ del tsconfig
+    - Fixeados todos los errores de tipo:
+      - Agregado id: randomUUID() a todos los create de Prisma
+      - Cambiado .error.errors → .error.issues (Zod 4)
+      - Fixeado z.record() con 2 argumentos (Zod 4)
+      - Corregido nombre de relaciones Prisma
+
+WO-0010:
+  id: WO-0010
+  titulo: "Habilitar noImplicitAny en tsconfig.json"
+  prioridad: P2
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: quality
+  archivos:
+    - tsconfig.json
+  solucion_aplicada: |
+    - Cambiado noImplicitAny: false → true
+
+WO-0011:
+  id: WO-0011
+  titulo: "Documentar limitación de rate limiting in-memory"
+  prioridad: P2
+  estado: "[x] COMPLETADO"
+  area: Docs
+  tipo: documentation
+  archivos:
+    - src/lib/rate-limit.ts
+  solucion_aplicada: |
+    - Agregado comentario documental con recomendaciones
+    - Listadas alternativas: @upstash/ratelimit, Redis, etc.
+
+---
+# =============================================================================
+# P3 - BAJO (Mejoras)
+# =============================================================================
+
+WO-0012:
+  id: WO-0012
+  titulo: "Crear .env.example con variables documentadas"
+  prioridad: P3
+  estado: "[x] COMPLETADO"
+  area: DX
+  tipo: documentation
+  archivos:
+    - .env.example
+  solucion_aplicada: |
+    - Creado archivo con todas las variables
+    - Agregado production checklist
+    - Documentados warnings de seguridad
+
+WO-0013:
+  id: WO-0013
+  titulo: "Agregar tests de integración para API routes"
+  prioridad: P3
+  estado: "[ ] PENDIENTE"
+  area: Tests
+  tipo: testing
+  estimacion: 4h
+  notas: |
+    Requiere crear tests para:
+    - /api/prompts (GET, POST)
+    - /api/prompts/[id] (GET, PUT, DELETE)
+    - /api/categories
+    - /api/auth/signup
+
+WO-0014:
+  id: WO-0014
+  titulo: "Mejorar manejo de errores en client fetch"
+  prioridad: P3
+  estado: "[x] COMPLETADO"
+  area: Frontend
+  tipo: improvement
+  archivos:
+    - src/lib/store.ts
+  solucion_aplicada: |
+    - Agregado try/catch para leer body del error
+    - Logueado error completo en consola
+    - Extraído mensaje de error más descriptivo
+
+WO-0015:
+  id: WO-0015
+  titulo: "Agregar validación de NEXTAUTH_URL en producción"
+  prioridad: P3
+  estado: "[x] COMPLETADO"
+  area: Config
+  tipo: improvement
+  archivos:
+    - src/lib/auth.ts
+    - .env.example
+  solucion_aplicada: |
+    - Agregado warning en producción si falta NEXTAUTH_URL
+    - Documentado en .env.example con ejemplos
+
+---
+# =============================================================================
+# CAMBIOS ADICIONALES (No planificados)
+# =============================================================================
+
+cambios_adicionales:
+  - descripcion: "Fixeados nombres de relaciones Prisma en múltiples archivos"
+    archivos:
+      - src/app/api/prompts/route.ts
+      - src/app/api/prompts/[id]/route.ts
+      - src/app/api/prompts/[id]/publish/route.ts
+      - src/app/api/prompts/[id]/feedback/route.ts
+    detalle: |
+      Cambiado 'author' → 'User_Prompt_authorIdToUser'
+      Cambiado 'reviewer' → 'User_Prompt_reviewerIdToUser'
+      Cambiado 'versions' → 'PromptVersion'
+      Cambiado 'user' → 'User'
+
+  - descripcion: "Agregado id: randomUUID() a todos los create de Prisma"
+    razon: "El schema requiere id explícito (no auto-generado)"
+
+  - descripcion: "Fixeado prompt-editor.tsx escape de llaves"
+    archivo: src/components/prompt-manager/prompt-editor.tsx
+    detalle: "Cambiado {'{nombre}', '{departamento}'} → {\"{nombre}\"}, {\"{departamento}\"}"
+
+---
+# =============================================================================
+# VERIFICACIÓN FINAL
+# =============================================================================
+
+verificacion:
+  lint: "✅ Sin errores"
+  tests: "✅ 15/15 pasando"
+  build: "✅ Exitoso"
+  prisma: "✅ Schema válido"
+  
+  comandos:
+    - "bun run lint"
+    - "bun run test:run"
+    - "bun run build"
+    - "bunx prisma validate"
