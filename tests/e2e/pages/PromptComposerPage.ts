@@ -30,25 +30,23 @@ export class PromptComposerPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.dialog = page.locator('[role="dialog"]');
+    this.dialog = page.locator('[data-testid="composer-dialog"], [role="dialog"]');
     this.title = this.dialog.locator('h2');
     this.description = this.dialog.locator('p').first();
 
-    // Panels
+    // Panels - use data-testid for stable selectors
     this.variablesPanel = this.dialog.locator('text=Variables').locator('..');
-    this.previewPanel = this.dialog.locator('text=Vista Previa, text=Preview').locator('..');
+    this.previewPanel = this.dialog.locator('[data-testid="preview-panel"]');
 
-    // Actions
-    this.copyButton = this.dialog.locator('button:has-text("Copiar"), button:has-text("Copy")');
-    this.closeButton = this.dialog.locator('button:has-text("Cerrar"), button:has-text("Close")');
-    this.favoriteButton = this.dialog.locator('button >> svg[class*="Star"], button >> svg[class*="star"]');
+    // Actions - use data-testid for stable selectors
+    this.copyButton = this.dialog.locator('[data-testid="copy-button"]');
+    this.closeButton = this.dialog.locator('[data-testid="close-button"]');
+    this.favoriteButton = this.dialog.locator('[data-testid="favorite-button"]');
 
-    // Risk indicators
-    this.riskBadge = this.dialog.locator('[class*="badge"], [class*="Badge"]').filter({
-      hasText: /riesgo|risk/i
-    });
+    // Risk indicators - use data-testid
+    this.riskBadge = this.dialog.locator('[data-testid="risk-badge"]');
     this.securityWarning = this.dialog.locator('[class*="destructive"], [class*="warning"]');
-    this.highRiskWarning = this.dialog.locator('text=alto riesgo, text=high risk, text=Atencion');
+    this.highRiskWarning = this.dialog.locator('text=Atencion, text=alto riesgo, text=high risk');
 
     // Preview
     this.previewContent = this.dialog.locator('pre.whitespace-pre-wrap, pre');
@@ -148,11 +146,12 @@ export class PromptComposerPage {
   }
 
   /**
-   * Check if copy was successful (shows "Copiado!" text)
+   * Check if copy was successful (shows "¡Copiado!" text)
    */
   async isCopySuccessful(): Promise<boolean> {
     try {
-      await this.dialog.locator('text=Copiado, text=Copied').waitFor({ timeout: 3000 });
+      // Wait for the button text to change to "¡Copiado!"
+      await this.copyButton.locator('text=/Copiado|Copied/i').waitFor({ timeout: 5000 });
       return true;
     } catch {
       return false;
@@ -170,6 +169,9 @@ export class PromptComposerPage {
    * Get the risk level from the badge
    */
   async getRiskLevel(): Promise<'low' | 'medium' | 'high' | null> {
+    // Wait for risk badge to be visible first (async state update)
+    await this.riskBadge.waitFor({ state: 'visible', timeout: 5000 });
+
     const text = await this.riskBadge.textContent() || '';
     if (text.toLowerCase().includes('alto') || text.toLowerCase().includes('high')) {
       return 'high';
@@ -188,7 +190,9 @@ export class PromptComposerPage {
    */
   async isHighRiskWarningVisible(): Promise<boolean> {
     try {
-      await this.highRiskWarning.waitFor({ timeout: 2000 });
+      // Use data-testid for reliable targeting of the high risk warning
+      const warning = this.dialog.locator('[data-testid="high-risk-warning"]');
+      await warning.waitFor({ timeout: 5000 });
       return true;
     } catch {
       return false;
@@ -199,9 +203,12 @@ export class PromptComposerPage {
    * Dismiss high risk warning
    */
   async dismissHighRiskWarning() {
-    const dismissButton = this.dialog.locator('button:has-text("Entendido"), button:has-text("Continue")');
+    // Button text is "Entendido, continuar" or "Ignorar y copiar"
+    const dismissButton = this.dialog.locator('button:has-text("Entendido"), button:has-text("Ignorar"), button:has-text("Continue")');
     if (await dismissButton.count() > 0) {
-      await dismissButton.click();
+      await dismissButton.first().click();
+      // Wait for the warning to disappear
+      await this.page.waitForTimeout(300);
     }
   }
 

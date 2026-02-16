@@ -104,6 +104,7 @@ export function SecurityBanner({ text = '', onRiskDetected, showDetection = fals
               size="sm"
               className="h-6 px-2"
               onClick={() => setShowDetails(!showDetails)}
+              data-testid="show-details-button"
             >
               {showDetails ? <EyeSlash weight="regular" className="h-3 w-3" /> : <Eye weight="regular" className="h-3 w-3" />}
               {showDetails ? 'Ocultar' : 'Ver detalles'}

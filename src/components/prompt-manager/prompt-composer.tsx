@@ -180,6 +180,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleFavorite(prompt.id)}
+                data-testid="favorite-button"
               >
                 <Star weight={prompt.isFavorite ? 'fill' : 'regular'} className="h-4 w-4" />
               </Button>
@@ -197,10 +198,10 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
           
           {/* Advertencia de alto riesgo */}
           {showHighRiskWarning && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" data-testid="high-risk-warning">
               <Warning weight="fill" className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                <strong>¡Atención!</strong> Se detectaron datos de alto riesgo. 
+                <strong>¡Atención!</strong> Se detectaron datos de alto riesgo.
                 Por seguridad, anonimiza los datos antes de continuar.
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" variant="outline" onClick={() => setShowHighRiskWarning(false)}>
@@ -309,7 +310,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
           
           {/* Metadatos del prompt */}
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <Badge variant="secondary">{prompt.category}</Badge>
+            <Badge variant="secondary">{prompt.category.name}</Badge>
             <Badge variant="outline" className="font-mono tabular-nums">v{prompt.version}</Badge>
             {parseTags(prompt.tags).map(tag => (
               <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>

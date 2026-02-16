@@ -283,13 +283,20 @@ export const useStore = create<PromptManagerState>()(
       
       initialize: async () => {
         const { fetchPrompts, fetchCategories, fetchStats, fetchUser } = get();
-        
+
         try {
-          // Ejecutar semilla primero
-          await fetch('/api/seed').catch(() => {
-            // Ignorar errores de semilla, no es crítico
-          });
-          
+          // Ejecutar semilla primero (con logging de errores)
+          try {
+            const res = await fetch('/api/seed');
+            if (!res.ok) {
+              logger.error('[Store] Seed request failed', { status: res.status });
+            }
+          } catch (seedError) {
+            logger.error('[Store] Seed network error', {
+              error: seedError instanceof Error ? seedError.message : String(seedError)
+            });
+          }
+
           // Cargar todo en paralelo
           await Promise.all([
             fetchUser(),

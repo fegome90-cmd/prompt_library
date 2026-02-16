@@ -89,7 +89,7 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
       setTitle(prompt.title);
       setDescription(prompt.description);
       setBody(prompt.body);
-      setCategory(prompt.category);
+      setCategory(prompt.category.name);
       setTags(parseTags(prompt.tags));
       setVariablesSchema(parseVariablesSchema(prompt.variablesSchema));
       setOutputFormat(prompt.outputFormat || '');
@@ -279,11 +279,17 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
                       <SelectValue placeholder="Seleccionar..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {cat.name}
+                      {categories.length === 0 ? (
+                        <SelectItem value="__empty" disabled>
+                          No hay categorías disponibles
                         </SelectItem>
-                      ))}
+                      ) : (
+                        categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

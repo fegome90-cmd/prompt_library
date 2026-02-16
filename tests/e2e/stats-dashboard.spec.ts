@@ -25,8 +25,10 @@ test.describe('Stats Dashboard', () => {
   });
 
   test('should navigate to stats tab', async ({ page }) => {
-    // Verify stats tab is active
-    await expect(page.locator('[role="tab"][data-state="active"]')).toContainText(/Estadisticas|Stats/i);
+    // Verify stats tab is active - check the main tabs (not floating sidebar)
+    // The main tabs are in a TabsList inside main content
+    const mainTabs = page.locator('main').locator('[role="tab"][data-state="active"]');
+    await expect(mainTabs).toContainText(/Estad.sticas/i);
   });
 
   test('should display KPI cards', async () => {

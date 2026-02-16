@@ -53,6 +53,7 @@ export function normalizePrompt(prompt: Record<string, unknown>): Prompt {
   const author = prompt.User_Prompt_authorIdToUser || prompt.author;
   const reviewer = prompt.User_Prompt_reviewerIdToUser || prompt.reviewer;
   const versions = prompt.PromptVersion || prompt.versions;
+  const category = prompt.category;
 
   return {
     ...prompt,
@@ -60,6 +61,7 @@ export function normalizePrompt(prompt: Record<string, unknown>): Prompt {
     author: author as Prompt['author'],
     reviewer: reviewer as Prompt['reviewer'] | undefined,
     versions: versions as Prompt['versions'],
+    category: category as Prompt['category'],
     // Parsear campos JSON
     tags: parseTags(prompt.tags as string[] | string),
     variablesSchema: parseVariablesSchema(prompt.variablesSchema as VariableSchema[] | string),
@@ -208,7 +210,8 @@ export function sortByRelevance<T extends { title: string; description: string; 
  */
 export function filterByCategory(prompt: Prompt, category: string | null): boolean {
   if (!category) return true;
-  return prompt.category === category;
+  // Support both categoryId and categoryName for filtering
+  return prompt.categoryId === category || prompt.category.name === category;
 }
 
 /**

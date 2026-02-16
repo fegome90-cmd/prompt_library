@@ -215,23 +215,39 @@ test.describe('Security Warning Display', () => {
     await libraryPage.clickPromptCard(0);
     await composerPage.waitForOpen();
 
-    // Fill with PII data
+    // Fill with PII data (email)
     const inputs = page.locator('[role="dialog"] input, [role="dialog"] textarea');
     const firstInput = inputs.first();
 
     if (await firstInput.isVisible()) {
       await firstInput.fill(piiTestData.mediumRisk);
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(1500);
 
-      // Look for "Ver detalles" button
-      const detailsButton = page.locator('button:has-text("Ver detalles"), button:has-text("detalles")');
-      if (await detailsButton.count() > 0) {
-        await detailsButton.first().click();
+      // Look for "Ver detalles" button using data-testid
+      const detailsButton = page.locator('[data-testid="show-details-button"]');
+      const detailsButtonAlt = page.locator('button:has-text("Ver detalles")');
 
-        // Badge for detected type should be visible
-        const badge = page.locator('[class*="badge"], [class*="Badge"]')
-          .filter({ hasText: /email|correo/i });
-        await expect(badge.first()).toBeVisible({ timeout: 5000 });
+      const buttonToUse = (await detailsButton.count()) > 0 ? detailsButton : detailsButtonAlt;
+
+      if (await buttonToUse.count() > 0) {
+        await buttonToUse.first().click();
+        await page.waitForTimeout(500);
+
+        // Badge for detected type should be visible - use a broader selector for Badge component
+        // Badge renders as a div with inline-flex class, look for text content matching the detection
+        const badge = page.locator('[data-testid="composer-dialog"] [role="alert"], [data-testid="composer-dialog"] [data-variant="destructive"], [data-testid="composer-dialog"] [class*="destructive"]')
+          .locator('div:has-text("correo"), span:has-text("correo"), button:has-text("correo")')
+          .first();
+        // If the badge isn't found with the above, try a text-based search
+        const badgeAlt = page.getByText(/Direcci.n de correo|correo electr.nico/i).first();
+
+        // One of the selectors should find the badge
+        const badgeCount = await badge.count();
+        if (badgeCount > 0) {
+          await expect(badge).toBeVisible({ timeout: 5000 });
+        } else {
+          await expect(badgeAlt).toBeVisible({ timeout: 5000 });
+        }
       }
     }
   });

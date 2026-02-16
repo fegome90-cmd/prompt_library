@@ -42,31 +42,35 @@ export function StatsDashboard() {
           value={overview.publishedPrompts}
           description={`${overview.draftPrompts} en borrador`}
           icon={<Books weight="regular" className="h-4 w-4" />}
+          testid="kpi-published"
         />
         <KPICard
           title="Usos Totales"
           value={overview.totalUsage}
           description={`${overview.recentUsage} esta semana`}
           icon={<ChartBar weight="regular" className="h-4 w-4" />}
+          testid="kpi-usage"
         />
         <KPICard
           title="Satisfacción"
           value={`${overview.avgRating}%`}
           description={`${overview.totalThumbsUp + overview.totalThumbsDown} feedbacks`}
           icon={<ThumbsUp weight="regular" className="h-4 w-4" />}
+          testid="kpi-satisfaction"
         />
         <KPICard
           title="Categorías"
           value={overview.totalCategories}
           description="activas"
           icon={<Sparkle weight="regular" className="h-4 w-4" />}
+          testid="kpi-categories"
         />
       </div>
       
       {/* Gráficos y listas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top prompts más usados */}
-        <Card>
+        <Card data-testid="top-prompts-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendUp weight="regular" className="h-4 w-4" />
@@ -103,7 +107,7 @@ export function StatsDashboard() {
         </Card>
         
         {/* Mejor valorados */}
-        <Card>
+        <Card data-testid="best-rated-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <ThumbsUp weight="regular" className="h-4 w-4 text-primary" />
@@ -136,7 +140,7 @@ export function StatsDashboard() {
         </Card>
         
         {/* Prompts problemáticos */}
-        <Card>
+        <Card data-testid="problematic-prompts-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Warning weight="fill" className="h-4 w-4 text-red-500" />
@@ -171,7 +175,7 @@ export function StatsDashboard() {
         </Card>
         
         {/* Uso por categoría */}
-        <Card>
+        <Card data-testid="usage-by-category-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <ChartBar weight="regular" className="h-4 w-4" />
@@ -218,14 +222,16 @@ function KPICard({
   value,
   description,
   icon,
+  testid,
 }: {
   title: string;
   value: number | string;
   description: string;
   icon: React.ReactNode;
+  testid?: string;
 }) {
   return (
-    <Card>
+    <Card data-testid={testid}>
       <CardContent className="pt-4">
         <div className="flex items-start justify-between">
           <div>

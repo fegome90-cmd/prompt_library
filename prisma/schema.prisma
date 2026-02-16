@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model AuditLog {
@@ -20,6 +20,7 @@ model AuditLog {
   @@index([action])
   @@index([userId])
   @@index([promptId])
+  @@index([createdAt])
 }
 
 model Category {
@@ -31,18 +32,20 @@ model Category {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime
+  prompts     Prompt[]
 }
 
 model Prompt {
   id                           String          @id
-  title                        String
+  title                        String          @unique
   description                  String
   body                         String
-  category                     String
-  tags                         String
-  variablesSchema              String          @default("[]")
+  categoryId                   String
+  category                     Category        @relation(fields: [categoryId], references: [id])
+  tags                         Json            @default("[]")
+  variablesSchema              Json            @default("[]")
   outputFormat                 String?
-  examples                     String?
+  examples                     Json?
   status                       String          @default("draft")
   riskLevel                    String          @default("low")
   version                      String          @default("1.0.0")
@@ -57,6 +60,8 @@ model Prompt {
   updatedAt                    DateTime
   publishedAt                  DateTime?
   deprecatedAt                 DateTime?
+  deletedAt                    DateTime?
+  deletedBy                    String?
   AuditLog                     AuditLog[]
   User_Prompt_reviewerIdToUser User?           @relation("Prompt_reviewerIdToUser", fields: [reviewerId], references: [id])
   User_Prompt_authorIdToUser   User            @relation("Prompt_authorIdToUser", fields: [authorId], references: [id])
@@ -64,11 +69,15 @@ model Prompt {
   PromptVersion                PromptVersion[]
 
   @@index([updatedAt])
-  @@index([category, status])
+  @@index([categoryId, status])
   @@index([isFavorite])
   @@index([authorId])
   @@index([status])
-  @@index([category])
+  @@index([categoryId])
+  @@index([status, updatedAt])
+  @@index([authorId, status])
+  @@index([categoryId, updatedAt])
+  @@index([deletedAt])
 }
 
 model PromptUsage {
@@ -85,7 +94,7 @@ model PromptUsage {
 
   @@index([userId])
   @@index([promptId])
-  @@index([createdAt])              // Para queries de "feedback reciente"
+  @@index([createdAt])
 }
 
 model PromptVersion {
@@ -93,7 +102,7 @@ model PromptVersion {
   promptId        String
   version         String
   body            String
-  variablesSchema String
+  variablesSchema Json
   outputFormat    String?
   changelog       String?
   authorId        String
@@ -108,7 +117,7 @@ model User {
   id                             String        @id
   email                          String        @unique
   name                           String
-  password                       String?       // Hashed password (bcrypt), nullable for migration/OAuth users
+  password                       String?       
   emailVerified                  DateTime?
   image                          String?
   role                           String        @default("user")
@@ -122,9 +131,8 @@ model User {
   PromptUsage                    PromptUsage[]
 }
 
-// NextAuth - Account model for OAuth providers
 model Account {
-  id                String  @id
+  id                String   @id
   userId            String
   type              String
   provider          String
@@ -136,6 +144,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -143,18 +153,17 @@ model Account {
   @@index([userId])
 }
 
-// NextAuth - Session model for database sessions
 model Session {
   id           String   @id
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// NextAuth - Verification token for email verification
 model VerificationToken {
   identifier String
   token      String   @unique

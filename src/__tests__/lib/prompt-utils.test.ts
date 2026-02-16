@@ -248,7 +248,8 @@ describe('filterByCategory', () => {
     title: 'Test',
     description: '',
     body: 'Body',
-    category: 'General',
+    categoryId: 'cat-1',
+    category: { id: 'cat-1', name: 'General' },
     tags: [],
     variablesSchema: [],
     examples: [],
@@ -264,9 +265,14 @@ describe('filterByCategory', () => {
     updatedAt: '2024-01-01',
   };
 
-  it('should filter by category', () => {
+  it('should filter by category name', () => {
     expect(filterByCategory(prompt, 'General')).toBe(true);
     expect(filterByCategory(prompt, 'RRHH')).toBe(false);
+  });
+
+  it('should filter by categoryId', () => {
+    expect(filterByCategory(prompt, 'cat-1')).toBe(true);
+    expect(filterByCategory(prompt, 'cat-2')).toBe(false);
   });
 
   it('should return true for null category', () => {
@@ -280,7 +286,8 @@ describe('filterByTags', () => {
     title: 'Test',
     description: '',
     body: 'Body',
-    category: 'General',
+    categoryId: 'cat-1',
+    category: { id: 'cat-1', name: 'General' },
     tags: ['tag1', 'tag2', 'tag3'],
     variablesSchema: [],
     examples: [],
@@ -368,7 +375,8 @@ describe('filterPrompts', () => {
       title: 'Test Prompt',
       description: 'Description',
       body: 'Body',
-      category: 'General',
+      categoryId: 'cat-1',
+      category: { id: 'cat-1', name: 'General' },
       tags: ['ai'],
       variablesSchema: [],
       examples: [],
@@ -388,7 +396,8 @@ describe('filterPrompts', () => {
       title: 'Other Prompt',
       description: 'Other description',
       body: 'Body',
-      category: 'RRHH',
+      categoryId: 'cat-2',
+      category: { id: 'cat-2', name: 'RRHH' },
       tags: ['hr'],
       variablesSchema: [],
       examples: [],
@@ -406,8 +415,8 @@ describe('filterPrompts', () => {
   ];
 
   it('should apply all filters', () => {
-    const result = filterPrompts(prompts, { 
-      search: 'Test', 
+    const result = filterPrompts(prompts, {
+      search: 'Test',
       category: 'General',
       tags: ['ai'],
       onlyFavorites: true,

@@ -41,7 +41,21 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = category;
+      // FIX-001: Support both categoryId and categoryName for backward compatibility
+      // If category looks like a UUID, use categoryId, otherwise lookup by name
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+      if (isUuid) {
+        where.categoryId = category;
+      } else {
+        // Lookup category by name to get ID
+        const categoryRecord = await db.category.findFirst({
+          where: { name: category },
+          select: { id: true },
+        });
+        if (categoryRecord) {
+          where.categoryId = categoryRecord.id;
+        }
+      }
     }
 
     if (favorites) {
@@ -73,6 +87,7 @@ export async function GET(request: NextRequest) {
             User_Prompt_authorIdToUser: {
               select: { id: true, name: true, email: true },
             },
+            category: true,
           },
           orderBy: [{ isFavorite: 'desc' }, { updatedAt: 'desc' }],
         }),
@@ -95,6 +110,7 @@ export async function GET(request: NextRequest) {
         User_Prompt_authorIdToUser: {
           select: { id: true, name: true, email: true },
         },
+        category: true,
       },
       orderBy: [{ isFavorite: 'desc' }, { updatedAt: 'desc' }],
     });
@@ -136,13 +152,26 @@ export async function POST(request: NextRequest) {
     // Use authenticated user as author
     const authorId = currentUser.id;
 
+    // FIX-001: Resolve categoryId from category name
+    const categoryRecord = await db.category.findFirst({
+      where: { name: data.category },
+      select: { id: true },
+    });
+
+    if (!categoryRecord) {
+      return NextResponse.json(
+        { error: `Category '${data.category}' not found` },
+        { status: 400 }
+      );
+    }
+
     const prompt = await db.prompt.create({
       data: {
         id: randomUUID(),
         title: data.title,
         description: data.description,
         body: data.body,
-        category: data.category,
+        categoryId: categoryRecord.id,
         tags: data.tags,
         variablesSchema: data.variablesSchema,
         outputFormat: data.outputFormat,
@@ -155,6 +184,9 @@ export async function POST(request: NextRequest) {
       include: {
         User_Prompt_authorIdToUser: {
           select: { id: true, name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
         },
       },
     });

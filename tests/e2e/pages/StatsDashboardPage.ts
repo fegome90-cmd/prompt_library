@@ -28,20 +28,20 @@ export class StatsDashboardPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.container = page.locator('[data-testid="stats-dashboard"], .space-y-6').first();
+    this.container = page.locator('[data-testid="stats-dashboard"]');
 
-    // KPI Cards
-    this.kpiCards = this.container.locator('> .grid > div');
-    this.publishedPromptsKpi = this.kpiCards.filter({ hasText: /Publicados|Published/ });
-    this.totalUsageKpi = this.kpiCards.filter({ hasText: /Usos|Usage|Totales/ });
-    this.satisfactionKpi = this.kpiCards.filter({ hasText: /Satisfaccion|Satisfaction/ });
-    this.categoriesKpi = this.kpiCards.filter({ hasText: /Categorias|Categories/ });
+    // KPI Cards - use data-testid for stable selectors
+    this.kpiCards = this.container.locator('[data-testid="kpi-grid"] > div');
+    this.publishedPromptsKpi = this.container.locator('[data-testid="kpi-published"]');
+    this.totalUsageKpi = this.container.locator('[data-testid="kpi-usage"]');
+    this.satisfactionKpi = this.container.locator('[data-testid="kpi-satisfaction"]');
+    this.categoriesKpi = this.container.locator('[data-testid="kpi-categories"]');
 
-    // Chart/List Cards
-    this.topPromptsCard = this.container.locator('text=/Mas Usados|Most Used|Top/').locator('..').first();
-    this.bestRatedCard = this.container.locator('text=/Mejor Valorados|Best Rated/').locator('..').first();
-    this.problematicPromptsCard = this.container.locator('text=/Atencion|Attention|Problematic|Requieren/').locator('..').first();
-    this.usageByCategoryCard = this.container.locator('text=/Por Categoria|By Category/').locator('..').first();
+    // Chart/List Cards - use data-testid for stable selectors
+    this.topPromptsCard = this.container.locator('[data-testid="top-prompts-card"]');
+    this.bestRatedCard = this.container.locator('[data-testid="best-rated-card"]');
+    this.problematicPromptsCard = this.container.locator('[data-testid="problematic-prompts-card"]');
+    this.usageByCategoryCard = this.container.locator('[data-testid="usage-by-category-card"]');
   }
 
   /**
@@ -49,19 +49,38 @@ export class StatsDashboardPage {
    */
   async waitForLoad() {
     await this.container.waitFor({ state: 'visible', timeout: 10000 });
-    // Wait for loading state to finish
+
+    // Wait for KPI grid to be populated
     await this.page.waitForFunction(() => {
-      const loading = document.body.textContent?.includes('Cargando estadisticas');
-      const kpis = document.querySelectorAll('.grid.grid-cols-2 > div');
-      return !loading && kpis.length > 0;
+      const kpiGrid = document.querySelector('[data-testid="kpi-grid"]');
+      const kpiCards = kpiGrid?.querySelectorAll('[data-testid^="kpi-"]');
+      return kpiCards && kpiCards.length >= 4;
     }, { timeout: 15000 });
   }
 
   /**
-   * Get KPI value by name
+   * Get KPI value by name (using data-testid)
    */
   async getKpiValue(kpiName: string): Promise<string> {
-    const kpiCard = this.kpiCards.filter({ hasText: new RegExp(kpiName, 'i') });
+    // Map common names to testids
+    const testidMap: Record<string, string> = {
+      'publicados': 'kpi-published',
+      'published': 'kpi-published',
+      'usos': 'kpi-usage',
+      'usage': 'kpi-usage',
+      'totales': 'kpi-usage',
+      'satisfaccion': 'kpi-satisfaction',
+      'satisfaction': 'kpi-satisfaction',
+      'categorias': 'kpi-categories',
+      'categories': 'kpi-categories',
+    };
+
+    const testid = testidMap[kpiName.toLowerCase()] || `kpi-${kpiName.toLowerCase()}`;
+    const kpiCard = this.container.locator(`[data-testid="${testid}"]`);
+
+    // Wait for card to be visible
+    await kpiCard.waitFor({ state: 'visible', timeout: 10000 });
+
     const valueElement = kpiCard.locator('p.text-2xl');
     return await valueElement.textContent() || '0';
   }

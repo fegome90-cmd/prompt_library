@@ -474,9 +474,9 @@ function PromptCard({
   selectedTags: string[];
   onTagClick: (tag: string) => void;
 }) {
-  const category = prompt.category;
+  const category = prompt.category.name;
   const tags = parseTags(prompt.tags);
-  
+
   return (
     <div
       className="p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors group"

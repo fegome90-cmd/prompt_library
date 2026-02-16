@@ -88,21 +88,21 @@ export async function GET() {
     const categories = await db.category.findMany({
       orderBy: { order: 'asc' },
     });
-    
+
     const usageByCategory = await Promise.all(
       categories.map(async (cat) => {
         const count = await db.prompt.count({
-          where: { category: cat.name, status: 'published' },
+          where: { categoryId: cat.id, status: 'published', deletedAt: null },
         });
         const uses = await db.prompt.aggregate({
-          where: { category: cat.name, status: 'published' },
+          where: { categoryId: cat.id, status: 'published', deletedAt: null },
           _sum: { useCount: true },
         });
         return {
           category: cat.name,
           color: cat.color,
           promptsCount: count,
-          totalUses: uses._sum.useCount || 0,
+          totalUses: uses._sum.useCount ?? 0,
         };
       })
     );
