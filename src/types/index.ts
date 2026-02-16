@@ -1,5 +1,10 @@
 // Tipos para el Prompt Manager
 
+// Enum types matching Prisma schema
+export type PromptStatus = 'draft' | 'review' | 'published' | 'deprecated'
+export type RiskLevel = 'low' | 'medium' | 'high'
+export type UserRole = 'owner' | 'editor' | 'reviewer' | 'user'
+
 export interface VariableSchema {
   name: string;
   label: string;
@@ -19,13 +24,19 @@ export interface Prompt {
   title: string;
   description: string;
   body: string;
-  category: string;
-  tags: string[] | string; // string cuando viene de la API, array cuando está parseado
-  variablesSchema: VariableSchema[] | string; // string cuando viene de la API, array cuando está parseado
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+    color?: string;
+    icon?: string;
+  };
+  tags: string[];
+  variablesSchema: VariableSchema[];
   outputFormat?: string;
-  examples: PromptExample[] | string;
-  status: 'draft' | 'review' | 'published' | 'deprecated';
-  riskLevel: 'low' | 'medium' | 'high';
+  examples: PromptExample[];
+  status: PromptStatus;
+  riskLevel: RiskLevel;
   version: string;
   changelog?: string;
   useCount: number;
@@ -46,6 +57,8 @@ export interface Prompt {
   updatedAt: string;
   publishedAt?: string;
   deprecatedAt?: string;
+  deletedAt?: string;
+  deletedBy?: string;
   versions?: PromptVersion[];
 }
 
@@ -54,7 +67,7 @@ export interface PromptVersion {
   promptId: string;
   version: string;
   body: string;
-  variablesSchema: string;
+  variablesSchema: VariableSchema[];
   outputFormat?: string;
   changelog?: string;
   authorId: string;
@@ -72,7 +85,7 @@ export interface PromptUsage {
   };
   feedback?: 'thumbs_up' | 'thumbs_down';
   comment?: string;
-  dataRiskLevel?: 'low' | 'medium' | 'high';
+  dataRiskLevel?: RiskLevel;
   variablesUsed?: string;
   createdAt: string;
 }
@@ -93,7 +106,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'owner' | 'editor' | 'reviewer' | 'user';
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
 }

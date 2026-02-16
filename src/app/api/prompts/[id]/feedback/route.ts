@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
+import { AuditService } from '@/services/audit.service';
 
 /**
  * POST - Registrar uso y feedback de un prompt
@@ -134,14 +135,11 @@ export async function POST(
       });
       
       // 3. Crear registro de auditoría
-      await tx.auditLog.create({
-        data: {
-          id: randomUUID(),
-          promptId: id,
-          userId: finalUserId,
-          action: 'feedback',
-          details: JSON.stringify({ feedback, comment, dataRiskLevel }),
-        },
+      await AuditService.logInTransaction(tx, {
+        promptId: id,
+        userId: finalUserId,
+        action: 'feedback',
+        details: { feedback, comment, dataRiskLevel },
       });
       
       return usageEvent;

@@ -145,7 +145,6 @@ export function validatePrompt(data: {
   score = Math.max(0, Math.min(100, score));
 
   // Calcular severidad
-  const hasErrors = errors.some(e => e.severity === 'error');
   const valid = errors.filter(e => e.severity === 'error').length === 0;
 
   return {

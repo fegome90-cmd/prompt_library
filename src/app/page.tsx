@@ -223,15 +223,15 @@ export default function PromptManagerPage() {
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <TabsList>
-              <TabsTrigger value="library" className="gap-1">
+              <TabsTrigger value="library" className="gap-1" aria-label="Biblioteca">
                 <Books weight="regular" className="h-4 w-4" />
                 <span className="hidden sm:inline">Biblioteca</span>
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="gap-1">
+              <TabsTrigger value="favorites" className="gap-1" aria-label="Favoritos">
                 <Star weight="regular" className="h-4 w-4" />
                 <span className="hidden sm:inline">Favoritos</span>
               </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-1">
+              <TabsTrigger value="stats" className="gap-1" aria-label="Estadísticas">
                 <ChartBar weight="regular" className="h-4 w-4" />
                 <span className="hidden sm:inline">Estadísticas</span>
               </TabsTrigger>
@@ -242,6 +242,7 @@ export default function PromptManagerPage() {
                 <div className="relative flex-1 sm:w-64">
                   <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    data-testid="search-input"
                     placeholder="Buscar prompts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -263,12 +264,13 @@ export default function PromptManagerPage() {
                   </SelectContent>
                 </Select>
                 
-                <div className="flex border rounded-lg">
+                <div className="flex border rounded-lg" data-testid="view-toggle">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
                     className="rounded-r-none"
                     onClick={() => setViewMode('grid')}
+                    data-testid="view-toggle-grid"
                   >
                     <GridFour weight="regular" className="h-4 w-4" />
                   </Button>
@@ -277,6 +279,7 @@ export default function PromptManagerPage() {
                     size="sm"
                     className="rounded-l-none"
                     onClick={() => setViewMode('list')}
+                    data-testid="view-toggle-list"
                   >
                     <List weight="regular" className="h-4 w-4" />
                   </Button>
@@ -436,13 +439,14 @@ function PromptCard({
 
   return (
     <div
+      data-testid="prompt-card"
       className="group rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
       onClick={onSelect}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{prompt.category}</span>
+            <span className="text-xs text-muted-foreground">{prompt.category.name}</span>
           </div>
           <div className="flex items-center gap-1">
             {prompt.isFavorite && (
@@ -481,7 +485,7 @@ function PromptCard({
             {rating !== null && (
               <>
                 <span>•</span>
-                <span className="text-emerald-500">{rating}% útil</span>
+                <span className="text-success">{rating}% útil</span>
               </>
             )}
           </div>
@@ -557,7 +561,7 @@ function PromptListItem({
       
       <div className="flex items-center gap-2 flex-shrink-0">
         <Badge className={cn("text-xs", CATEGORY_STYLE)}>
-          {prompt.category}
+          {prompt.category.name}
         </Badge>
         <Badge variant="outline" className="text-xs font-mono tabular-nums">v{prompt.version}</Badge>
         <span className="text-xs text-muted-foreground font-mono tabular-nums">{prompt.useCount} usos</span>

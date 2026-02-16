@@ -12,6 +12,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const signupSchema = z.object({
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     });
 
     // SECURITY: Log signup (without password)
-    console.log(`[AUTH] New user registered: ${email}`);
+    logger.info('[AUTH] New user registered', { email });
 
     return NextResponse.json(
       {

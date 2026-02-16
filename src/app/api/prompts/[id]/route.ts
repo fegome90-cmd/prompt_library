@@ -15,18 +15,15 @@ import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { updatePromptSchema, formatZodError } from '@/lib/validators/prompt';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  RATE_LIMIT_PRESETS,
-  createRateLimitResponse,
-} from '@/lib/rate-limit';
+import { applyRateLimit } from '@/services/rate-limit.service';
+import { AuditService } from '@/services/audit.service';
 import {
   getUserWithDevFallback,
   canModifyPrompt,
   canDeletePrompt,
 } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 // WO-0009: Función de validación de versión
 function isValidVersion(version: string): boolean {
@@ -37,7 +34,7 @@ function isValidVersion(version: string): boolean {
 // WO-0009: Función de incremento de versión
 function incrementVersion(version: string): string {
   if (!isValidVersion(version)) {
-    console.warn(`[WO-0009] Versión inválida "${version}", reseteando a 1.0`);
+    logger.warn(`[WO-0009] Versión inválida "${version}", reseteando a 1.0`);
     return '1.0';
   }
 
@@ -90,18 +87,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // SECURITY: Rate limiting
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.standard);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'standard');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación PUT');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación PUT');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -112,7 +106,7 @@ export async function PUT(
     const validation = updatePromptSchema.safeParse(body);
 
     if (!validation.success) {
-      console.warn('[WO-0005] Validación fallida:', validation.error.issues);
+      logger.warn('[WO-0005] Validación fallida', { issues: validation.error.issues });
       return NextResponse.json(
         formatZodError(validation.error),
         { status: 400 }
@@ -131,7 +125,7 @@ export async function PUT(
 
     // SECURITY: Validación de permisos con roles
     if (!canModifyPrompt(currentUser, existingPrompt.authorId)) {
-      console.warn(
+      logger.warn(
         `[SECURITY] Usuario ${currentUser.id} (${currentUser.role}) intentó modificar prompt de otro usuario`
       );
       return NextResponse.json(
@@ -164,7 +158,7 @@ export async function PUT(
           promptId: id,
           version: existingPrompt.version,
           body: existingPrompt.body,
-          variablesSchema: existingPrompt.variablesSchema,
+          variablesSchema: existingPrompt.variablesSchema ?? [],
           outputFormat: existingPrompt.outputFormat,
           changelog: changelog || 'Actualización',
           authorId: existingPrompt.authorId,
@@ -178,11 +172,10 @@ export async function PUT(
     if (description !== undefined) updateData.description = description;
     if (promptBody !== undefined) updateData.body = promptBody;
     if (category !== undefined) updateData.category = category;
-    if (tags !== undefined) updateData.tags = JSON.stringify(tags);
-    if (variablesSchema !== undefined)
-      updateData.variablesSchema = JSON.stringify(variablesSchema);
+    if (tags !== undefined) updateData.tags = tags;
+    if (variablesSchema !== undefined) updateData.variablesSchema = variablesSchema;
     if (outputFormat !== undefined) updateData.outputFormat = outputFormat;
-    if (examples !== undefined) updateData.examples = JSON.stringify(examples);
+    if (examples !== undefined) updateData.examples = examples;
     if (riskLevel !== undefined) updateData.riskLevel = riskLevel;
     if (changelog !== undefined) updateData.changelog = changelog;
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite;
@@ -203,14 +196,11 @@ export async function PUT(
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: currentUser.id,
-        action: 'update',
-        details: JSON.stringify({ changes: Object.keys(updateData), changelog }),
-      },
+    await AuditService.log({
+      promptId: id,
+      userId: currentUser.id,
+      action: 'update',
+      details: { changes: Object.keys(updateData), changelog },
     });
 
     return NextResponse.json(prompt);
@@ -226,18 +216,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // SECURITY: Rate limiting (strict for destructive operations)
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.strict);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'strict');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación DELETE');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación DELETE');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -253,7 +240,7 @@ export async function DELETE(
 
     // SECURITY: Only owners and editors can delete
     if (!canDeletePrompt(currentUser)) {
-      console.warn(
+      logger.warn(
         `[SECURITY] Usuario ${currentUser.id} (${currentUser.role}) intentó eliminar prompt - rol insuficiente`
       );
       return NextResponse.json(
@@ -272,14 +259,11 @@ export async function DELETE(
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: currentUser.id,
-        action: 'delete',
-        details: JSON.stringify({ title: existingPrompt.title }),
-      },
+    await AuditService.log({
+      promptId: id,
+      userId: currentUser.id,
+      action: 'delete',
+      details: { title: existingPrompt.title },
     });
 
     return NextResponse.json({ success: true, message: 'Prompt marcado como deprecado' });

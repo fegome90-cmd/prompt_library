@@ -1,7 +1,8 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
+import { AuditService } from '@/services/audit.service';
 
 // POST - Publicar un prompt (cambiar estado a published)
 // WO-0003: Validar reviewer antes de crear auditLog
@@ -37,20 +38,20 @@ export async function POST(
     
     // WO-0003: Validar que reviewer existe antes de continuar
     if (!reviewer) {
-      console.error('[WO-0003] No hay usuario disponible para auditar la publicación');
+      logger.error('[WO-0003] No hay usuario disponible para auditar la publicación');
       return NextResponse.json(
         { error: 'No hay usuario disponible para auditar la publicación' },
         { status: 500 }
       );
     }
-    
+
     // Verificar que el reviewer existe en la base de datos
     const reviewerExists = await db.user.findUnique({
       where: { id: reviewer },
     });
-    
+
     if (!reviewerExists) {
-      console.error(`[WO-0003] El reviewer ${reviewer} no existe en la base de datos`);
+      logger.error(`[WO-0003] El reviewer ${reviewer} no existe en la base de datos`);
       return NextResponse.json(
         { error: 'El usuario revisor no existe' },
         { status: 500 }
@@ -75,16 +76,13 @@ export async function POST(
     });
     
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: id,
-        userId: reviewer,
-        action: 'publish',
-        details: JSON.stringify({ 
-          previousStatus: existingPrompt.status,
-          version: existingPrompt.version,
-        }),
+    await AuditService.log({
+      promptId: id,
+      userId: reviewer,
+      action: 'publish',
+      details: {
+        previousStatus: existingPrompt.status,
+        version: existingPrompt.version,
       },
     });
     

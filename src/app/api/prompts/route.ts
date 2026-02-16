@@ -9,14 +9,11 @@ import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createPromptSchema, formatZodError } from '@/lib/validators/prompt';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  RATE_LIMIT_PRESETS,
-  createRateLimitResponse,
-} from '@/lib/rate-limit';
+import { applyRateLimit } from '@/services/rate-limit.service';
+import { AuditService } from '@/services/audit.service';
 import { getUserWithDevFallback } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 // GET - Listar todos los prompts
 // WO-0008: Paginación opcional
@@ -44,7 +41,21 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = category;
+      // FIX-001: Support both categoryId and categoryName for backward compatibility
+      // If category looks like a UUID, use categoryId, otherwise lookup by name
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+      if (isUuid) {
+        where.categoryId = category;
+      } else {
+        // Lookup category by name to get ID
+        const categoryRecord = await db.category.findFirst({
+          where: { name: category },
+          select: { id: true },
+        });
+        if (categoryRecord) {
+          where.categoryId = categoryRecord.id;
+        }
+      }
     }
 
     if (favorites) {
@@ -55,9 +66,11 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { title: { contains: search } },
         { description: { contains: search } },
-        { tags: { contains: search } },
       ];
     }
+
+    // FIX-003: Exclude soft-deleted prompts
+    where.deletedAt = null;
 
     // WO-0008: Si hay paginación, usar formato paginado
     if (pageParam || limitParam) {
@@ -74,6 +87,7 @@ export async function GET(request: NextRequest) {
             User_Prompt_authorIdToUser: {
               select: { id: true, name: true, email: true },
             },
+            category: true,
           },
           orderBy: [{ isFavorite: 'desc' }, { updatedAt: 'desc' }],
         }),
@@ -96,6 +110,7 @@ export async function GET(request: NextRequest) {
         User_Prompt_authorIdToUser: {
           select: { id: true, name: true, email: true },
         },
+        category: true,
       },
       orderBy: [{ isFavorite: 'desc' }, { updatedAt: 'desc' }],
     });
@@ -110,18 +125,15 @@ export async function GET(request: NextRequest) {
 // WO-0005: Validación con Zod
 export async function POST(request: NextRequest) {
   // SECURITY: Rate limiting
-  const clientId = getClientIdentifier(request);
-  const rateLimit = checkRateLimit(clientId, RATE_LIMIT_PRESETS.standard);
-  if (!rateLimit.success) {
-    return createRateLimitResponse(rateLimit) as NextResponse;
-  }
+  const rateLimitError = applyRateLimit(request, 'standard');
+  if (rateLimitError) return rateLimitError;
 
   try {
     // SECURITY: Get authenticated user (with dev fallback in development)
     const currentUser = await getUserWithDevFallback();
 
     if (!currentUser) {
-      console.warn('[SECURITY] No hay usuario autenticado para operación POST');
+      logger.warn('[SECURITY] No hay usuario autenticado para operación POST');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -131,7 +143,7 @@ export async function POST(request: NextRequest) {
     const validation = createPromptSchema.safeParse(body);
 
     if (!validation.success) {
-      console.warn('[WO-0005] Validación fallida:', validation.error.issues);
+      logger.warn('[WO-0005] Validación fallida', { issues: validation.error.issues });
       return NextResponse.json(formatZodError(validation.error), { status: 400 });
     }
 
@@ -140,17 +152,30 @@ export async function POST(request: NextRequest) {
     // Use authenticated user as author
     const authorId = currentUser.id;
 
+    // FIX-001: Resolve categoryId from category name
+    const categoryRecord = await db.category.findFirst({
+      where: { name: data.category },
+      select: { id: true },
+    });
+
+    if (!categoryRecord) {
+      return NextResponse.json(
+        { error: `Category '${data.category}' not found` },
+        { status: 400 }
+      );
+    }
+
     const prompt = await db.prompt.create({
       data: {
         id: randomUUID(),
         title: data.title,
         description: data.description,
         body: data.body,
-        category: data.category,
-        tags: JSON.stringify(data.tags),
-        variablesSchema: JSON.stringify(data.variablesSchema),
+        categoryId: categoryRecord.id,
+        tags: data.tags,
+        variablesSchema: data.variablesSchema,
         outputFormat: data.outputFormat,
-        examples: JSON.stringify(data.examples),
+        examples: data.examples,
         riskLevel: data.riskLevel,
         status: 'draft',
         authorId: authorId,
@@ -160,18 +185,18 @@ export async function POST(request: NextRequest) {
         User_Prompt_authorIdToUser: {
           select: { id: true, name: true, email: true },
         },
+        category: {
+          select: { id: true, name: true },
+        },
       },
     });
 
     // Crear registro de auditoría
-    await db.auditLog.create({
-      data: {
-        id: randomUUID(),
-        promptId: prompt.id,
-        userId: authorId,
-        action: 'create',
-        details: JSON.stringify({ title: data.title, category: data.category }),
-      },
+    await AuditService.log({
+      promptId: prompt.id,
+      userId: authorId,
+      action: 'create',
+      details: { title: data.title, category: data.category },
     });
 
     return NextResponse.json(prompt);

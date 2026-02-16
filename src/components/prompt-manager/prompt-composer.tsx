@@ -27,6 +27,7 @@ import { SecurityBanner } from './security-banner';
 import { useStore } from '@/lib/store';
 import { getRiskLevel } from '@/lib/pii-detector';
 import { parseTags, parseVariablesSchema } from '@/lib/prompt-utils';
+import { logger } from '@/lib/logger';
 import type { Prompt, VariableSchema } from '@/types';
 import { toast } from 'sonner';
 
@@ -61,7 +62,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
       setGeneratedText('');
       setCopied(false);
     }
-  }, [prompt?.id, parsedSchema]);
+  }, [prompt, parsedSchema]);
   
   // Generar el texto del prompt
   const generateText = useCallback(() => {
@@ -128,7 +129,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
       
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Error al copiar:', error);
+      logger.error('Error al copiar', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Error al copiar');
     }
   };
@@ -139,19 +140,19 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
   
   const getRiskBadge = () => {
     const colors = {
-      low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      low: 'bg-success/10 text-success',
+      medium: 'bg-warning/10 text-warning',
+      high: 'bg-destructive/10 text-destructive',
     };
-    
+
     const labels = {
       low: 'Bajo riesgo',
       medium: 'Riesgo medio',
       high: 'Alto riesgo',
     };
-    
+
     return (
-      <Badge className={colors[overallRisk]}>
+      <Badge className={colors[overallRisk]} data-testid="risk-badge">
         {labels[overallRisk]}
       </Badge>
     );
@@ -161,7 +162,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" data-testid="composer-dialog">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -179,6 +180,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleFavorite(prompt.id)}
+                data-testid="favorite-button"
               >
                 <Star weight={prompt.isFavorite ? 'fill' : 'regular'} className="h-4 w-4" />
               </Button>
@@ -196,10 +198,10 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
           
           {/* Advertencia de alto riesgo */}
           {showHighRiskWarning && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" data-testid="high-risk-warning">
               <Warning weight="fill" className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                <strong>¡Atención!</strong> Se detectaron datos de alto riesgo. 
+                <strong>¡Atención!</strong> Se detectaron datos de alto riesgo.
                 Por seguridad, anonimiza los datos antes de continuar.
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" variant="outline" onClick={() => setShowHighRiskWarning(false)}>
@@ -278,7 +280,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
             </Card>
             
             {/* Panel de preview */}
-            <Card>
+            <Card data-testid="preview-panel">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -308,7 +310,7 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
           
           {/* Metadatos del prompt */}
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <Badge variant="secondary">{prompt.category}</Badge>
+            <Badge variant="secondary">{prompt.category.name}</Badge>
             <Badge variant="outline" className="font-mono tabular-nums">v{prompt.version}</Badge>
             {parseTags(prompt.tags).map(tag => (
               <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
@@ -322,11 +324,11 @@ export function PromptComposer({ prompt, open, onOpenChange }: PromptComposerPro
             Copia y pega este prompt en ChatGPT, Copilot o tu IA preferida
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="close-button">
               <ArrowLeft weight="regular" className="h-4 w-4 mr-2" />
               Cerrar
             </Button>
-            <Button onClick={handleCopy} disabled={!generatedText}>
+            <Button onClick={handleCopy} disabled={!generatedText} data-testid="copy-button">
               {copied ? (
                 <>
                   <Check weight="regular" className="h-4 w-4 mr-2" />
