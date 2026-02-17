@@ -1,433 +1,394 @@
-# Frontend Improvement Plan - Prompt Library
+# Frontend Improvement Plan - Prompt Library (v2.0)
 
-## Executive Summary
-
-This document outlines a comprehensive plan to improve the frontend of the Prompt Library application, focusing on both the landing page and the main application interface.
-
----
-
-## 1. Current State Analysis
-
-### 1.1 Landing Page ([`src/app/page.tsx`](src/app/page.tsx))
-
-#### Strengths
-
-- Clean dark theme with `#0a0a0b` background
-- Subtle grid background for visual interest
-- Proper use of Phosphor Icons
-- Semantic structure with clear sections
-- Shadcn UI Button component integration
-
-#### Critical Issues
-
-| Issue | Severity | Description |
-|-------|----------|-------------|
-| Generic template layout | High | Follows standard SaaS template without differentiation |
-| Fake trust signals | Critical | Lists Vercel, Linear, Stripe, Supabase as users - credibility risk |
-| Empty screenshot placeholder | High | Shows terminal icon instead of actual product preview |
-| Broken navigation | Medium | Documentation and Pricing links point to `/app` incorrectly |
-| No micro-interactions | Medium | Static feel, lacks engagement |
-| Missing visual hierarchy | Medium | All sections have similar visual weight |
-
-### 1.2 App Interface ([`src/app/app/page.tsx`](src/app/app/page.tsx))
-
-#### Strengths
-
-- Zustand state management well implemented
-- Functional grid/list view toggle
-- Working search and filtering
-- Appropriate loading states
-
-#### Issues
-
-| Issue | Severity | Description |
-|-------|----------|-------------|
-| Flat header design | Medium | Lacks visual interest and hierarchy |
-| Generic card design | Medium | Cards lack personality and visual distinction |
-| Unengaging empty states | Medium | Missing opportunity for user engagement |
-| No animations | Low | UI feels static and lifeless |
-| Footer feels disconnected | Low | Visual disconnect from main content |
-
-### 1.3 Design System Issues
-
-| File | Issue |
-|------|-------|
-| [`tailwind.config.ts`](tailwind.config.ts) | Uses `hsl(var(--x))` format |
-| [`globals.css`](src/app/globals.css) | Defines colors in OKLCH format |
-| **Result** | **CRITICAL: CSS genera colores inválidos como `hsl(oklch(0.45 0.18 280))`** |
-
-**Nota:** El usuario confirmó que framer-motion ya está instalado.
+> Fecha: 2026-02-17  
+> Estado: Listo para ejecución  
+> Versión: 2.0 (reescrito con análisis crítico)
 
 ---
 
-## 2. Improvement Plan
+## Resumen Ejecutivo
 
-### 2.1 Landing Page Redesign
+**Objetivo:** Elevar credibilidad, claridad y velocidad de uso del producto en landing y app sin romper comportamiento existente.
 
-#### 2.1.1 Hero Section Improvements
+**Problemas críticos identificados:**
 
-```
-Current State:
-- Static hero with text and CTAs
-- Placeholder screenshot below
+1. Links de navegación rotos (Documentación y Precios → `/app`)
+2. Trust signals falsos (logos de Vercel, Linear, Stripe, Supabase sin relación real)
+3. Screenshot placeholder sin valor de producto
+4. Sin baseline de métricas para medir impacto
 
-Proposed Changes:
-- Add animated gradient background effect
-- Implement floating prompt cards animation
-- Add real screenshot of the application
-- Include animated code snippets preview
-```
-
-**Visual Concept:**
-
-```
-+------------------------------------------+
-|  [Logo]    Docs  Pricing  Login  [CTA]   |
-+------------------------------------------+
-|                                          |
-|     [Animated gradient orbs]             |
-|                                          |
-|   Manage AI prompts                      |
-|   like code.                             |
-|                                          |
-|   [Primary CTA]  [Secondary CTA]         |
-|                                          |
-|   [Floating prompt cards animation]      |
-|                                          |
-+------------------------------------------+
-|   [Real app screenshot with glow]        |
-+------------------------------------------+
-```
-
-#### 2.1.2 Features Section Redesign
-
-**Current:** 3-column grid with basic icon cards
-**Proposed:** Interactive feature showcase with:
-
-- Hover animations on cards
-- Expanding details on click
-- Visual examples for each feature
-- Gradient borders on hover
-
-#### 2.1.3 Social Proof Section (NEW)
-
-Replace fake trust signals with:
-
-- Real usage statistics
-- GitHub stars counter
-- Open source badge
-- Community testimonials (if available)
-
-#### 2.1.4 Interactive Demo Section (NEW)
-
-Add a live demo or video preview:
-
-- Embedded video or GIF
-- Interactive code playground
-- Feature walkthrough carousel
-
-### 2.2 App Interface Improvements
-
-#### 2.2.1 Header Enhancement
-
-```
-Current:
-+--------------------------------------------------+
-| [Logo] Prompt Manager     [User Badge] [New CTA] |
-|        Biblioteca / Todos - 42 prompts           |
-+--------------------------------------------------+
-
-Proposed:
-+--------------------------------------------------+
-| [Logo] Prompt Manager          Search...  [User] |
-|        v2.0 stable                        [CTA]  |
-+--------------------------------------------------+
-| [Tabs]                    [Filter] [View Toggle] |
-+--------------------------------------------------+
-```
-
-**Changes:**
-
-- Move search to header for persistent access
-- Add version badge
-- Improve visual hierarchy
-- Add subtle gradient accent
-
-#### 2.2.2 Prompt Card Redesign
-
-**Current Design Issues:**
-
-- Flat appearance
-- Limited visual feedback
-- Hidden actions until hover
-
-**Proposed Design:**
-
-```
-+----------------------------------------+
-| [Category]                    [Status] |
-|                                        |
-|  Prompt Title                          |
-|  Description text that provides...     |
-|                                        |
-|  [tag] [tag] [tag] +3                  |
-|                                        |
-|  v1.2  |  42 usos  |  89% útil         |
-+----------------------------------------+
-| [Preview] [Edit] [Use]                  |
-+----------------------------------------+
-```
-
-**Improvements:**
-
-- Always visible action buttons
-- Better tag overflow handling
-- Visual risk indicator
-- Subtle gradient on hover
-- Version badge with color coding
-
-#### 2.2.3 Empty State Improvements
-
-**Current:** Basic icon + text + CTA
-**Proposed:**
-
-- Animated illustration
-- Contextual suggestions
-- Quick action buttons
-- Onboarding tips
-
-#### 2.2.4 Add Animations
-
-| Element | Animation |
-|---------|-----------|
-| Cards | Fade-in on mount, scale on hover |
-| Tabs | Slide indicator |
-| Search | Expand on focus |
-| Buttons | Ripple effect on click |
-| Modals | Scale + fade entrance |
-
-### 2.3 Design System Fixes
-
-#### 2.3.1 Color System Alignment
-
-**Option A: Convert OKLCH to HSL in globals.css**
-
-```css
-/* Before */
---primary: oklch(0.45 0.18 280);
-
-/* After */
---primary: 263 70% 50%; /* HSL values */
-```
-
-**Option B: Update Tailwind config for OKLCH**
-
-```ts
-// tailwind.config.ts
-colors: {
-  primary: 'oklch(var(--primary))',
-}
-```
-
-**Recommendation:** Option A for broader browser support
-
-#### 2.3.2 Add Animation Utilities
-
-```css
-/* Add to globals.css */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
-}
-```
+**Enfoque:** Ejecución por Work Orders con gates de verificación obligatorios.
 
 ---
 
-## 3. Implementation Roadmap
+## 1) Dirección de Diseño (FIJA)
 
-### Phase 1: Critical Fix (BLOCKER)
+Se adopta una dirección **Utility & Function** (sobria, densa, técnica) con acento violeta existente.
 
-- [ ] **FIX COLOR SYSTEM HSL/OKLCH MISMATCH** - Esto genera CSS inválido
+### Reglas de implementación obligatorias
 
-### Phase 2: Quick Wins (High Impact, Low Effort)
-
-- [ ] Fix broken navigation links
-- [ ] Remove fake trust signals
-- [ ] Add real app screenshot
-- [ ] Add basic hover animations to cards
-
-### Phase 2: Landing Page Enhancement
-
-- [ ] Implement animated hero background
-- [ ] Add floating prompt cards animation
-- [ ] Redesign features section with interactions
-- [ ] Add social proof section with real metrics
-- [ ] Create interactive demo section
-
-### Phase 3: App Interface Polish
-
-- [ ] Redesign header with search integration
-- [ ] Implement new prompt card design
-- [ ] Add empty state illustrations
-- [ ] Implement animation system
-- [ ] Add keyboard shortcuts panel
-
-### Phase 4: Advanced Features
-
-- [ ] Add command palette (Cmd+K)
-- [ ] Implement dark/light mode toggle
-- [ ] Add onboarding tour
-- [ ] Create settings panel
-- [ ] Add notification system
+| Regla | Aplicación |
+|-------|------------|
+| Jerarquía tipográfica | Espaciado y typografía antes de efectos decorativos |
+| Animaciones funcionales | Solo feedback/transición, nunca decorativo |
+| Anti-generic | Evitar "template SaaS genérico", gradientes excesivos, glows |
+| Consistencia | Usar tokens y componentes existentes del proyecto |
 
 ---
 
-## 4. Technical Specifications
+## 2) Análisis Crítico del Estado Actual
 
-### 4.1 Component Architecture
+### 2.1 Landing Page (`src/app/page.tsx`)
+
+| Problema | Ubicación | Severidad | Impacto |
+|----------|-----------|-----------|---------|
+| Links rotos | Líneas 42-53 | **CRÍTICO** | UX confusión, bounce rate |
+| Trust signals falsos | Líneas 114-119 | **ALTO** | Reputacional, credibilidad |
+| Screenshot placeholder | Líneas 145-155 | **ALTO** | No muestra valor de producto |
+| v2.0 claim sin evidencia | Línea 75 | MEDIO | claim no verificable |
+
+### 2.2 App (`/app`)
+
+| Problema | Severidad | Notas |
+|----------|-----------|-------|
+| Header sin jerarquía clara | MEDIO | Mejora oportunidad |
+| PromptCard puede mejorar | MEDIO | Acciones y metadata |
+| Empty states genéricos | BAJO | Oportunidad de mejora |
+
+---
+
+## 3) Métricas de Éxito
+
+### 3.1 Landing
+
+| Métrica | Baseline (Fase 0) | Target |
+|---------|-------------------|--------|
+| Lighthouse Mobile Performance | _Por medir_ | >= baseline |
+| Lighthouse Accessibility | _Por medir_ | >= 90 |
+| CTA Click-through Rate | _Por medir_ | +10% vs baseline |
+| Bounce Rate | _Por medir_ | -5% vs baseline |
+
+### 3.2 App
+
+| Métrica | Target |
+|---------|--------|
+| Time-to-first-prompt | < 5 segundos |
+| Búsqueda efectiva | < 1 segundo |
+| Error states visibles | 0 regresiones |
+| Accessibility score | >= 90 |
+
+---
+
+## 4) Fases de Ejecución
+
+### Fase 0 - Baseline y Guardrails ⭐ OBLIGATORIA
+
+**Objetivo:** Medir estado actual antes de cualquier cambio UI.
+
+**Entregables:**
 
 ```
-src/
-  components/
-    landing/
-      hero-section.tsx
-      features-section.tsx
-      social-proof-section.tsx
-      demo-section.tsx
-      cta-section.tsx
-    app/
-      header.tsx
-      prompt-card.tsx
-      prompt-list-item.tsx
-      empty-state.tsx
-      command-palette.tsx
-    ui/
-      animated-card.tsx
-      gradient-text.tsx
-      glow-effect.tsx
+docs/plans/2026-02-17-frontend-baseline.md
 ```
 
-### 4.2 Animation Library
+| Entregable | Método | Tiempo estimado |
+|------------|--------|-----------------|
+| Lighthouse mobile/desktop | Chrome DevTools | 15 min |
+| Lighthouse accessibility | Lighthouse audit | 15 min |
+| Checklist a11y manual | Revisión teclado/foco | 30 min |
+| Eventos analytics | Definir tracking | 30 min |
 
-**Recommendation:** Use Framer Motion for complex animations
+**Definition of Done:**
+
+- [ ] Documento de baseline guardado en `docs/plans/`
+- [ ] Lighthouse scores documentados (mobile + desktop)
+- [ ] Checklist a11y completado para componentes críticos
+- [ ] Eventos de tracking definidos (o fallback con console.log)
+- [ ] Criterios de aceptación acordados para siguiente fase
+
+**Gates de verificación:**
 
 ```bash
-bun add framer-motion
+bun run lint
+bun run test:run
+bun run build
 ```
 
-**Usage Example:**
+---
 
-```tsx
-import { motion } from 'framer-motion';
+### Fase 1 - Fixes Críticos de Credibilidad
 
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.3 }}
->
-  <PromptCard />
-</motion.div>
+**Objetivo:** Eliminar fricción y riesgo reputacional inmediato.
+
+#### WO-0017: Fix navegación + trust signals
+
+- **Archivos:** `src/app/page.tsx`
+- **Estimación:** 60 min
+- **Cambios:**
+  - `href="/app"` → `href="#"` o link real de docs (Documentación)
+  - `href="/app"` → `href="#"` o pricing page (Precios)
+  - Eliminar "USADO POR EQUIPOS EN" con logos falsos
+  - Verificar que "Comenzar gratis" sigue funcionando
+
+**Definition of Done:**
+
+- [ ] Link Documentación apunta a destino válido
+- [ ] Link Precios apunta a destino válido  
+- [ ] Section de trust signals eliminada o reemplazada
+- [ ] No hay regresión en layout responsive
+
+#### WO-0018: Screenshot real optimizada
+
+- **Archivos:** `src/app/page.tsx`, `public/landing/`
+- **Estimación:** 75 min
+- **Cambios:**
+  - Reemplazar placeholder con captura real del dashboard
+  - Usar `next/image` con sizes apropiados
+  - Verificar aspect ratio consistente
+  - Añadir `alt` descriptivo
+
+**Definition of Done:**
+
+- [ ] Hero muestra screenshot real del producto
+- [ ] No hay layout shift (CLS < 0.1)
+- [ ] Imagen servida con Next/Image optimizada
+- [ ] Fallback para slow connections
+
+**Gates de verificación (Fase 1):**
+
+```bash
+bun run lint
+bun run test:run  
+bun run build
+# Revisión visual: desktop + mobile
 ```
 
-### 4.3 Performance Considerations
+---
 
-- Use CSS animations where possible (better performance)
-- Lazy load heavy animations below the fold
-- Use `will-change` sparingly for GPU acceleration
-- Implement intersection observer for scroll animations
+### Fase 2 - Landing Polish
+
+**Objetivo:** Mejorar percepción de calidad sin sobrecargar performance.
+
+#### WO-0019: Landing polish con motion accesible
+
+- **Archivos:** `src/app/page.tsx`, `src/app/globals.css`
+- **Estimación:** 3 horas
+- **Cambios:**
+  - Mejorar jerarquía visual del hero
+  - Microinteracciones en feature cards
+  - Respetar `prefers-reduced-motion`
+  - Optimizar Lighthouse performance
+
+**Definition of Done:**
+
+- [ ] Lighthouse mobile >= baseline de Fase 0
+- [ ] prefers-reduced-motion funciona correctamente
+- [ ] No hay regresiones en responsive
+- [ ] Animaciones son fluidas (60fps target)
+
+**Features opcionales dentro de WO-0019:**
+
+- Social proof real (métricas de GitHub, stars, etc.)
+- Testimonios si hay usuarios reales
+- Badge de "Open Source" si aplica
 
 ---
 
-## 5. Visual Design Guidelines
+### Fase 3 - App Interface Polish
 
-### 5.1 Color Palette
+#### WO-0020: Header /app mejorado
 
-| Token | Light Mode | Dark Mode | Usage |
-|-------|------------|-----------|-------|
-| primary | `#8b5cf6` | `#a78bfa` | CTAs, accents |
-| background | `#ffffff` | `#0a0a0b` | Page background |
-| card | `#f8fafc` | `#111113` | Card backgrounds |
-| border | `#e2e8f0` | `rgba(255,255,255,0.08)` | Borders |
-| muted | `#64748b` | `rgba(255,255,255,0.5)` | Secondary text |
+- **Archivos:** `src/app/app/page.tsx`, `src/components/prompt-manager/`
+- **Estimación:** 2 horas
+- **Cambios:**
+  - Jerarquía clara en header
+  - Acceso persistente a búsqueda
+  - Filtros y view toggle visibles
+  - Feedback de estado (loading/error)
 
-### 5.2 Typography Scale
+**Definition of Done:**
 
-| Element | Size | Weight | Line Height |
-|---------|------|--------|-------------|
-| H1 | 48px/3rem | 600 | 1.1 |
-| H2 | 30px/1.875rem | 600 | 1.3 |
-| H3 | 20px/1.25rem | 500 | 1.4 |
-| Body | 16px/1rem | 400 | 1.5 |
-| Small | 14px/0.875rem | 400 | 1.4 |
-| Mono | 13px/0.8125rem | 400 | 1.5 |
+- [ ] Search mantiene comportamiento actual
+- [ ] Filtros accesibles y funcionales
+- [ ] Loading states visibles
+- [ ] Error states con guidance
 
-### 5.3 Spacing System
+#### WO-0021: PromptCard + Empty States
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| xs | 4px | Tight spacing |
-| sm | 8px | Component padding |
-| md | 16px | Section padding |
-| lg | 24px | Section margins |
-| xl | 32px | Major sections |
-| 2xl | 48px | Hero spacing |
+- **Archivos:** `src/app/app/page.tsx`, `src/components/prompt-manager/`
+- **Estimación:** 3 horas
+- **Cambios:**
+  - Acciones claras en cada card (copy, edit, delete)
+  - Metadata legible (fecha, categoría, versión)
+  - Empty states con CTAs accionables
 
----
+**Definition of Done:**
 
-## 6. Success Metrics
+- [ ] Cada PromptCard tiene acciones evidentes
+- [ ] Empty state guía al usuario a crear primer prompt
+- [ ] Consistencia con design tokens existentes
 
-### 6.1 Landing Page
+**Gates de verificación (Fase 3):**
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Bounce Rate | TBD | < 40% |
-| Time on Page | TBD | > 2 min |
-| CTA Click Rate | TBD | > 15% |
-| Mobile Performance | TBD | > 90 Lighthouse |
-
-### 6.2 App Interface
-
-| Metric | Current | Target |
-|--------|---------|--------|
-| Task Completion | TBD | > 90% |
-| Time to First Prompt | TBD | < 30 sec |
-| Error Rate | TBD | < 1% |
-| User Satisfaction | TBD | > 4.5/5 |
+```bash
+bun run lint
+bun run test:run
+bun run build
+# Testing: búsqueda, filtros, tabs, loading/error
+```
 
 ---
 
-## 7. Risk Assessment
+### Fase 4 - Extensiones Opcionales
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Animation performance issues | Medium | Medium | Use CSS animations, lazy load |
-| Color system migration bugs | Low | High | Thorough testing, gradual rollout |
-| Breaking existing functionality | Low | High | Comprehensive test suite |
-| Design inconsistency | Medium | Medium | Design system documentation |
+**Objetivo:** Añadir funcionalidades de confort sin comprometer estabilidad.
+
+#### WO-0022: Features opcionales
+
+- **Estimación:** 4 horas
+- **Features candidatos:**
+  - Command palette (Cmd/Ctrl + K)
+  - Onboarding liviano para nuevos usuarios
+  - Panel de atajos / settings mínimo
+
+**Definition of Done:**
+
+- [ ] Feature flag para rollout controlado
+- [ ] Bundle size no aumenta > 10kb
+- [ ] Documentación de uso actualizada
+- [ ] Fallback si feature no está lista
 
 ---
 
-## 8. Next Steps
+## 5) Matriz de Work Orders
 
-1. **Review and approve this plan**
-2. **Switch to Code mode for implementation**
-3. **Start with Phase 1 quick wins**
-4. **Iterate based on user feedback**
+| WO | Fase | Prioridad | Estimación | Dependencias |
+|----|------|-----------|-------------|---------------|
+| WO-0016 | Fase 0 | P1 | 90min | - |
+| WO-0017 | Fase 1 | P1 | 60min | WO-0016 |
+| WO-0018 | Fase 1 | P1 | 75min | WO-0016 |
+| WO-0019 | Fase 2 | P2 | 3h | WO-0017, WO-0018 |
+| WO-0020 | Fase 3 | P2 | 2h | WO-0019 |
+| WO-0021 | Fase 3 | P2 | 3h | WO-0019 |
+| WO-0022 | Fase 4 | P3 | 4h | WO-0020, WO-0021 |
 
 ---
 
-*Document created: 2026-02-17*
-*Last updated: 2026-02-17*
+## 6) Diagrama de Dependencias
+
+```
+[WO-0016] ─────┬─────► [WO-0017] ─────┐
+               │                       │
+               └─────► [WO-0018] ──────┼──► [WO-0019] ──┬──► [WO-0020]
+                                                           │
+                                                           ├──► [WO-0022]
+                                                           │
+                                                     [WO-0021]
+```
+
+**Reglas:**
+
+1. ✅ WO-0016 debe completarse antes de cualquier cambio UI
+2. ✅ WO-0017 y WO-0018 pueden ejecutarse en paralelo (post WO-0016)
+3. ✅ WO-0019 requiere ambos WO-0017 y WO-0018
+4. ✅ WO-0020 y WO-0021 requieren WO-0019
+5. ✅ WO-0022 requiere WO-0020 Y WO-0021
+
+---
+
+## 7) Verificación por Fase
+
+### Gates obligatorios (por cada WO)
+
+```bash
+# 1. Lint
+bun run lint
+
+# 2. Tests
+bun run test:run
+
+# 3. Build
+bun run build
+```
+
+### Checks adicionales para cambios UI
+
+| Check | Herramienta | Frecuencia |
+|-------|-------------|------------|
+| Revisión visual desktop | Browser | Por WO |
+| Revisión visual mobile | DevTools | Por WO |
+| Keyboard navigation | Manual | Por WO |
+| Focus states | Manual | Por WO |
+| prefers-reduced-motion | DevTools | Por WO |
+| Lighthouse | Chrome DevTools | Por fase |
+
+---
+
+## 8) Análisis de Riesgos y Mitigaciones
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|--------------|---------|------------|
+| Scope creep visual | ALTA | MEDIO | PRs pequeños, revisión de diseño antes de merge |
+| Regresiones en /app | MEDIA | ALTO | Tests de regresión, testing manual |
+| Performance degrade | MEDIA | ALTO | Lighthouse gates, animaciones CSS primero |
+| Métricas sin baseline | MEDIA | MEDIO | Fase 0 obligatoria antes de cambios |
+| Timeline overrun | ALTA | BAJO | Buffer de 20%, WOs priorizados |
+
+### Rollback Strategy
+
+Si en cualquier punto:
+
+- Lighthouse performance cae > 10 puntos
+- Error rate aumenta > 1%
+- Tests fallan
+
+**Acción:** Revertir último PR y revisar con equipo.
+
+---
+
+## 9) Timeline Sugerido
+
+| Semana | Fase | WOs | Objetivo |
+|--------|------|-----|----------|
+| Semana 1 | Fase 0 | WO-0016 | Baseline y preparación |
+| Semana 1-2 | Fase 1 | WO-0017, WO-0018 | Fixes críticos |
+| Semana 2-3 | Fase 2 | WO-0019 | Landing polish |
+| Semana 3-4 | Fase 3 | WO-0020, WO-0021 | App polish |
+| Semana 5 | Fase 4 | WO-0022 | Opcional |
+
+**Total estimado:** 5-6 semanas (con contexto de trabajo paralelo)
+
+---
+
+## 10) Próximo Paso Inmediato
+
+**Ejecutar WO-0016 (Fase 0)** antes de cualquier cambio visual.
+
+```bash
+# Verificar estado actual
+bun run lint
+bun run test:run
+bun run build
+
+# Luego crear baseline
+# Crear docs/plans/2026-02-17-frontend-baseline.md
+```
+
+---
+
+## Anexo: Checklist de A11y (Fase 0)
+
+- [ ] Foco visible en todos los interactive elements
+- [ ] Navegación por teclado funciona
+- [ ] Contraste >= 4.5:1 en texto crítico
+- [ ] Labels asociados a inputs
+- [ ] Imágenes tienen alt text
+- [ ] ARIA labels donde corresponde
+- [ ] Skip links si hay navegación extensa
+- [ ] Error messages descriptivos
+
+---
+
+_Documento creado: 2026-02-17_  
+_Última actualización: 2026-02-17_  
+_Owner: Frontend Team_

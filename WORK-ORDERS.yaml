@@ -1,10 +1,10 @@
 # =============================================================================
 # WORK ORDERS - Prompt Manager (ACTUALIZADO)
 # =============================================================================
-# Última actualización: 2025-01-XX
-# Total WOs: 15
+# Última actualización: 2026-02-17
+# Total WOs: 22
 # Completados: 12
-# Pendientes: 3
+# Pendientes: 10
 # =============================================================================
 
 ---
@@ -13,18 +13,18 @@
 # =============================================================================
 
 resumen:
-  total_wos: 15
+  total_wos: 22
   por_prioridad:
     P0: 2
-    P1: 5
-    P2: 4
-    P3: 4
+    P1: 8
+    P2: 7
+    P3: 5
   
   por_estado:
     completados: 12
-    pendientes: 3
+    pendientes: 10
   
-  tiempo_invertido: "~4 horas"
+  tiempo_invertido: "~4 horas + frontend plan en ejecución"
 
 ---
 # =============================================================================
@@ -295,3 +295,171 @@ verificacion:
     - "bun run test:run"
     - "bun run build"
     - "bunx prisma validate"
+
+---
+# =============================================================================
+# FRONTEND IMPROVEMENT PROGRAM (2026-02-17)
+# =============================================================================
+# Fuente: plans/FRONTEND-IMPROVEMENT-PLAN.md
+# Estrategia: ejecutar por WO con gates (lint + test + build) por cada entrega.
+
+WO-0016:
+  id: WO-0016
+  titulo: "Baseline de métricas + guardrails frontend"
+  prioridad: P1
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: planning
+  fase: "Fase 0"
+  estimacion: 90min
+  depende_de: []
+  archivos:
+    - plans/FRONTEND-IMPROVEMENT-PLAN.md
+    - docs/plans/2026-02-17-frontend-baseline.md
+  criterios_aceptacion: |
+    - Baseline inicial documentado (Lighthouse mobile/desktop en landing)
+    - Checklist mínimo de a11y definido para cambios UI
+    - Eventos base definidos para medir CTA y uso de /app
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0017:
+  id: WO-0017
+  titulo: "Fix navegación landing + remover trust signals no verificables"
+  prioridad: P1
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: bugfix
+  fase: "Fase 1"
+  estimacion: 60min
+  depende_de:
+    - WO-0016
+  archivos:
+    - src/app/page.tsx
+  criterios_aceptacion: |
+    - Links Documentación/Precios no apuntan a /app
+    - Se eliminan claims de uso no verificables
+    - No se degrada la estructura responsive actual
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0018:
+  id: WO-0018
+  titulo: "Reemplazar placeholder por screenshot real optimizada"
+  prioridad: P1
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: improvement
+  fase: "Fase 1"
+  estimacion: 75min
+  depende_de:
+    - WO-0016
+  archivos:
+    - src/app/page.tsx
+    - public/
+  criterios_aceptacion: |
+    - Hero muestra screenshot real de producto
+    - Asset optimizado y servido correctamente con Next/Image
+    - No hay layout shift evidente en carga inicial
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0019:
+  id: WO-0019
+  titulo: "Landing polish con jerarquía visual y motion accesible"
+  prioridad: P2
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: enhancement
+  fase: "Fase 2"
+  estimacion: 3h
+  depende_de:
+    - WO-0017
+    - WO-0018
+  archivos:
+    - src/app/page.tsx
+    - src/app/globals.css
+  criterios_aceptacion: |
+    - Jerarquía visual de hero/features mejorada sin sobrecarga decorativa
+    - Microinteracciones respetan prefers-reduced-motion
+    - Lighthouse mobile en landing no cae vs baseline
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0020:
+  id: WO-0020
+  titulo: "App header polish con búsqueda persistente y jerarquía clara"
+  prioridad: P2
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: enhancement
+  fase: "Fase 3"
+  estimacion: 2h
+  depende_de:
+    - WO-0019
+  archivos:
+    - src/app/app/page.tsx
+    - src/components/prompt-manager/
+  criterios_aceptacion: |
+    - Header de /app mejora legibilidad y acceso a acciones frecuentes
+    - Search/filter/view toggle mantienen comportamiento actual
+    - Sin regresiones en loading/error states
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0021:
+  id: WO-0021
+  titulo: "Rediseño incremental de cards y empty states en /app"
+  prioridad: P2
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: enhancement
+  fase: "Fase 3"
+  estimacion: 3h
+  depende_de:
+    - WO-0019
+  archivos:
+    - src/app/app/page.tsx
+    - src/components/prompt-manager/
+  criterios_aceptacion: |
+    - PromptCard mejora acciones visibles y metadata legible
+    - Empty states incluyen guidance accionable
+    - UI mantiene consistencia con tokens y componentes existentes
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
+
+WO-0022:
+  id: WO-0022
+  titulo: "Extensiones opcionales (command palette/onboarding/settings mínimo)"
+  prioridad: P3
+  estado: "[ ] PENDIENTE"
+  area: Frontend
+  tipo: feature
+  fase: "Fase 4"
+  estimacion: 4h
+  depende_de:
+    - WO-0020
+    - WO-0021
+  archivos:
+    - src/app/app/page.tsx
+    - src/components/
+  criterios_aceptacion: |
+    - Features opcionales detrás de rollout controlado
+    - Sin impacto crítico en bundle/performance
+    - Documentación de uso y fallback actualizada
+  verificacion:
+    - bun run lint
+    - bun run test:run
+    - bun run build
