@@ -534,6 +534,25 @@ export default function PromptManagerPage() {
             </TabsList>
           </div>
 
+          {activeTab !== 'stats' && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/40 px-3 py-2">
+              <Badge variant="secondary" className="font-mono tabular-nums">
+                {filteredPrompts.length} / {prompts.length} visibles
+              </Badge>
+              {selectedCategory && (
+                <Badge variant="outline">Categoría: {selectedCategory}</Badge>
+              )}
+              {searchQuery.trim().length > 0 && (
+                <Badge variant="outline">Búsqueda: "{searchQuery.trim()}"</Badge>
+              )}
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" className="ml-auto" onClick={clearFilters}>
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Loading state */}
           {isLoading && (
             <div className="flex items-center justify-center py-12">
