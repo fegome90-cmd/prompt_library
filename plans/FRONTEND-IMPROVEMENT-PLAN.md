@@ -54,7 +54,9 @@ This document outlines a comprehensive plan to improve the frontend of the Promp
 |------|-------|
 | [`tailwind.config.ts`](tailwind.config.ts) | Uses `hsl(var(--x))` format |
 | [`globals.css`](src/app/globals.css) | Defines colors in OKLCH format |
-| **Result** | Potential color calculation issues |
+| **Result** | **CRITICAL: CSS genera colores inválidos como `hsl(oklch(0.45 0.18 280))`** |
+
+**Nota:** El usuario confirmó que framer-motion ya está instalado.
 
 ---
 
@@ -256,13 +258,16 @@ colors: {
 
 ## 3. Implementation Roadmap
 
-### Phase 1: Quick Wins (High Impact, Low Effort)
+### Phase 1: Critical Fix (BLOCKER)
+
+- [ ] **FIX COLOR SYSTEM HSL/OKLCH MISMATCH** - Esto genera CSS inválido
+
+### Phase 2: Quick Wins (High Impact, Low Effort)
 
 - [ ] Fix broken navigation links
 - [ ] Remove fake trust signals
 - [ ] Add real app screenshot
 - [ ] Add basic hover animations to cards
-- [ ] Fix color system HSL/OKLCH mismatch
 
 ### Phase 2: Landing Page Enhancement
 
