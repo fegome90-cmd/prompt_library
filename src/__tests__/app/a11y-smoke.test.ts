@@ -36,4 +36,16 @@ describe('A11y smoke checks', () => {
     const suppressHydrationWarningCount = (landing.match(/suppressHydrationWarning/g) ?? []).length;
     expect(suppressHydrationWarningCount).toBeGreaterThanOrEqual(3);
   });
+
+  it('keeps /app controls accessible for desktop and mobile filters', () => {
+    const appPage = readFileSync(resolve(process.cwd(), 'src/app/app/page.tsx'), 'utf8');
+
+    expect(appPage).toContain('data-testid="header-search"');
+    expect(appPage).toContain('data-testid="search-input"');
+    expect(appPage).toContain('data-testid="view-toggle"');
+    expect(appPage).toContain('aria-label="Abrir filtros"');
+    expect(appPage).toContain('SheetTitle>Filtros de biblioteca');
+    expect(appPage).toContain('aria-label="Vista cuadrícula"');
+    expect(appPage).toContain('aria-label="Vista lista"');
+  });
 });

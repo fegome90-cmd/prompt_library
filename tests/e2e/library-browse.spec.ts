@@ -132,7 +132,7 @@ test.describe('Library - Empty State', () => {
     // Search for something unlikely to match
     await libraryPage.searchPrompts('zzzznonexistent12345');
 
-    // Verify create button is shown
-    await expect(page.locator('button:has-text("Crear")')).toBeVisible();
+    // With active filters/search, new UX prioritizes "Limpiar filtros"
+    await expect(page.getByRole('button', { name: 'Limpiar filtros' }).first()).toBeVisible();
   });
 });

@@ -54,6 +54,8 @@ server.log
 # E2E test artifacts
 test-results/
 playwright-report/
+playwright-results.json
+playwright-results.xml
 artifacts/
 
 # Prisma

@@ -12,6 +12,9 @@ import {
   WarningCircle,
   ArrowClockwise,
   Keyboard,
+  CaretDown,
+  CaretUp,
+  SlidersHorizontal,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +37,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { SecurityBanner } from '@/components/prompt-manager/security-banner';
 import { PromptComposer } from '@/components/prompt-manager/prompt-composer';
 import { FloatingSidebar } from '@/components/prompt-manager/floating-sidebar';
@@ -62,6 +72,8 @@ export default function PromptManagerPage() {
     setSearchQuery,
     selectedCategory,
     setSelectedCategory,
+    clearFilters,
+    toggleFavorite,
     promptsLoadingState,
     error,
     initialize,
@@ -75,6 +87,8 @@ export default function PromptManagerPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [desktopControlsCollapsed, setDesktopControlsCollapsed] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Keyboard shortcut for command palette (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -100,6 +114,7 @@ export default function PromptManagerPage() {
 
   // Obtener prompts filtrados usando la función del store
   const filteredPrompts = getFilteredPrompts();
+  const hasActiveFilters = searchQuery.trim().length > 0 || selectedCategory !== null;
 
   // Manejar selección de prompt
   const handleSelectPrompt = (prompt: Prompt) => {
@@ -195,9 +210,8 @@ export default function PromptManagerPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            {/* Branding */}
+        <div className="container mx-auto px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex-shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
                 <Books weight="regular" className="h-5 w-5 text-white" />
@@ -210,22 +224,38 @@ export default function PromptManagerPage() {
               </div>
             </div>
 
-            {/* Quick search */}
-            <div className="hidden md:flex flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  data-testid="header-search"
-                  placeholder="Buscar prompts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-muted/50"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {activeTab !== 'stats' && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="hidden md:inline-flex"
+                    aria-expanded={!desktopControlsCollapsed}
+                    aria-controls="desktop-controls"
+                    onClick={() => setDesktopControlsCollapsed((prev) => !prev)}
+                  >
+                    {desktopControlsCollapsed ? (
+                      <CaretDown weight="regular" className="h-4 w-4" />
+                    ) : (
+                      <CaretUp weight="regular" className="h-4 w-4" />
+                    )}
+                    {desktopControlsCollapsed ? 'Mostrar controles' : 'Ocultar controles'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label="Abrir filtros"
+                    onClick={() => setMobileFiltersOpen(true)}
+                  >
+                    <SlidersHorizontal weight="regular" className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+
               <Badge variant="outline" className="hidden lg:flex">
                 {currentUser?.name || 'Usuario'}
               </Badge>
@@ -236,8 +266,174 @@ export default function PromptManagerPage() {
               </Button>
             </div>
           </div>
+
+          {activeTab !== 'stats' && (
+            <div
+              id="desktop-controls"
+              className={cn(
+                'hidden md:grid grid-cols-[minmax(0,1fr)_180px_auto] items-center gap-3 transition-all duration-200',
+                desktopControlsCollapsed && 'max-h-0 opacity-0 overflow-hidden pointer-events-none'
+              )}
+            >
+              <div className="relative">
+                <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  data-testid="header-search"
+                  placeholder="Buscar prompts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-muted/50"
+                />
+              </div>
+
+              <Select value={selectedCategory || '__all__'} onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : v)}>
+                <SelectTrigger aria-label="Filtrar por categoría">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="flex items-center justify-end gap-2">
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Limpiar filtros
+                  </Button>
+                )}
+                <div className="flex border rounded-lg" data-testid="view-toggle">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-r-none"
+                    onClick={() => setViewMode('grid')}
+                    data-testid="view-toggle-grid"
+                    aria-label="Vista cuadrícula"
+                  >
+                    <GridFour weight="regular" className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-l-none"
+                    onClick={() => setViewMode('list')}
+                    data-testid="view-toggle-list"
+                    aria-label="Vista lista"
+                  >
+                    <List weight="regular" className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== 'stats' && (
+            <div className="md:hidden flex items-center gap-2">
+              <div className="relative flex-1">
+                <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  data-testid="search-input"
+                  placeholder="Buscar prompts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                  aria-label="Vista cuadrícula"
+                >
+                  <GridFour weight="regular" className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => setViewMode('list')}
+                  aria-label="Vista lista"
+                >
+                  <List weight="regular" className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
+
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+        <SheetContent side="bottom">
+          <SheetHeader>
+            <SheetTitle>Filtros de biblioteca</SheetTitle>
+            <SheetDescription>Ajusta categoría y modo de visualización.</SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-2 space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="mobile-category-filter" className="text-sm font-medium">
+                Categoría
+              </label>
+              <Select
+                value={selectedCategory || '__all__'}
+                onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : v)}
+              >
+                <SelectTrigger id="mobile-category-filter" aria-label="Filtrar por categoría">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Vista</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <GridFour weight="regular" className="h-4 w-4 mr-2" />
+                  Cuadrícula
+                </Button>
+                <Button
+                  type="button"
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('list')}
+                >
+                  <List weight="regular" className="h-4 w-4 mr-2" />
+                  Lista
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearFilters();
+                  setMobileFiltersOpen(false);
+                }}
+              >
+                Limpiar
+              </Button>
+              <Button type="button" onClick={() => setMobileFiltersOpen(false)}>
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Command Palette */}
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
@@ -320,7 +516,7 @@ export default function PromptManagerPage() {
       {/* Main content */}
       <main id="main-content" className="container mx-auto px-4 py-4 flex-1">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3">
             <TabsList>
               <TabsTrigger value="library" className="gap-1" aria-label="Biblioteca">
                 <Books weight="regular" className="h-4 w-4" />
@@ -335,56 +531,6 @@ export default function PromptManagerPage() {
                 <span className="hidden sm:inline">Estadísticas</span>
               </TabsTrigger>
             </TabsList>
-
-            {activeTab !== 'stats' && (
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64 md:hidden">
-                  <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    data-testid="search-input"
-                    placeholder="Buscar prompts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-
-                <Select value={selectedCategory || '__all__'} onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : v)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todas</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="flex border rounded-lg" data-testid="view-toggle">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    className="rounded-r-none"
-                    onClick={() => setViewMode('grid')}
-                    data-testid="view-toggle-grid"
-                  >
-                    <GridFour weight="regular" className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    className="rounded-l-none"
-                    onClick={() => setViewMode('list')}
-                    data-testid="view-toggle-list"
-                  >
-                    <List weight="regular" className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Loading state */}
@@ -410,6 +556,7 @@ export default function PromptManagerPage() {
                         onSelect={() => handleSelectPrompt(prompt)}
                         onEdit={() => handleEditPrompt(prompt)}
                         onPublish={() => handlePublishPrompt(prompt.id)}
+                        onToggleFavorite={() => void toggleFavorite(prompt.id)}
                         onFeedback={(f) => handleFeedback(prompt.id, f)}
                       />
                     ))}
@@ -422,6 +569,8 @@ export default function PromptManagerPage() {
                         prompt={prompt}
                         onSelect={() => handleSelectPrompt(prompt)}
                         onEdit={() => handleEditPrompt(prompt)}
+                        onPublish={() => handlePublishPrompt(prompt.id)}
+                        onToggleFavorite={() => void toggleFavorite(prompt.id)}
                         onFeedback={(f) => handleFeedback(prompt.id, f)}
                       />
                     ))}
@@ -435,11 +584,15 @@ export default function PromptManagerPage() {
                     </div>
                     <h3 className="text-lg font-semibold mb-2">No se encontraron prompts</h3>
                     <p className="text-muted-foreground mb-6 max-w-sm">
-                      {searchQuery 
-                        ? 'No hay resultados para tu búsqueda. Prueba con otros términos.'
+                      {hasActiveFilters
+                        ? 'No hay resultados con los filtros actuales. Limpia filtros o intenta otra búsqueda.'
                         : 'Aún no tienes prompts. Crea tu primer prompt para comenzar a construir tu biblioteca.'}
                     </p>
-                    {!searchQuery && (
+                    {hasActiveFilters ? (
+                      <Button variant="outline" onClick={clearFilters}>
+                        Limpiar filtros
+                      </Button>
+                    ) : (
                       <Button onClick={handleNewPrompt}>
                         <Plus weight="regular" className="h-4 w-4 mr-2" />
                         Crear tu primer prompt
@@ -463,6 +616,8 @@ export default function PromptManagerPage() {
                         prompt={prompt}
                         onSelect={() => handleSelectPrompt(prompt)}
                         onEdit={() => handleEditPrompt(prompt)}
+                        onPublish={() => handlePublishPrompt(prompt.id)}
+                        onToggleFavorite={() => void toggleFavorite(prompt.id)}
                         onFeedback={(f) => handleFeedback(prompt.id, f)}
                       />
                     ))}
@@ -474,11 +629,20 @@ export default function PromptManagerPage() {
                     </div>
                     <h3 className="text-lg font-semibold mb-2">No tienes favoritos</h3>
                     <p className="text-muted-foreground mb-6 max-w-sm">
-                      Marca prompts como favoritos para acceder rápidamente desde aquí.
+                      {hasActiveFilters
+                        ? 'No hay favoritos que coincidan con los filtros activos.'
+                        : 'Marca prompts como favoritos para acceder rápidamente desde aquí.'}
                     </p>
-                    <Button variant="outline" onClick={() => setActiveTab('library')}>
-                      Explorar biblioteca
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {hasActiveFilters && (
+                        <Button variant="outline" onClick={clearFilters}>
+                          Limpiar filtros
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => setActiveTab('library')}>
+                        Explorar biblioteca
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>
@@ -534,12 +698,14 @@ function PromptCard({
   onSelect,
   onEdit: _onEdit,
   onPublish,
+  onToggleFavorite,
   onFeedback: _onFeedback,
 }: {
   prompt: Prompt;
   onSelect: () => void;
   onEdit: () => void;
   onPublish?: () => void;
+  onToggleFavorite: () => void;
   onFeedback: (feedback: 'thumbs_up' | 'thumbs_down') => void;
 }) {
   const tags = parseTags(prompt.tags);
@@ -553,8 +719,8 @@ function PromptCard({
       className="group rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
       onClick={onSelect}
     >
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
+      <div className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{prompt.category.name}</span>
           </div>
@@ -570,14 +736,13 @@ function PromptCard({
           </div>
         </div>
 
-        <h3 className="font-medium line-clamp-1 mb-1">{prompt.title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+        <h3 className="font-medium line-clamp-1">{prompt.title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {prompt.description}
         </p>
 
-        {/* Tags */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1">
             {tags.slice(0, 3).map(tag => (
               <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
                 {tag}
@@ -589,7 +754,13 @@ function PromptCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
+          <Badge
+            variant={prompt.riskLevel === 'high' ? 'destructive' : 'secondary'}
+            className="text-xs font-mono tabular-nums"
+          >
+            v{prompt.version}
+          </Badge>
           <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono tabular-nums">
             <span>{prompt.useCount} usos</span>
             {rating !== null && (
@@ -599,30 +770,29 @@ function PromptCard({
               </>
             )}
           </div>
-
-          <Badge
-            variant={prompt.riskLevel === 'high' ? 'destructive' : 'secondary'}
-            className="text-xs font-mono tabular-nums"
-          >
-            v{prompt.version}
-          </Badge>
         </div>
       </div>
 
-      <div className="border-t bg-muted/30 px-3 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono tabular-nums">
-          <span>{prompt.useCount} usos</span>
-          {rating !== null && (
-            <>
-              <span>•</span>
-              <span className="text-success">{rating}% útil</span>
-            </>
-          )}
-        </div>
+      <div className="border-t bg-muted/30 px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            aria-label={prompt.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+          >
+            <Star
+              weight={prompt.isFavorite ? 'fill' : 'regular'}
+              className={cn('h-4 w-4', prompt.isFavorite && 'fill-primary text-primary')}
+            />
+          </Button>
           {onPublish && prompt.status === 'draft' && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="h-7 text-xs"
               onClick={(e) => { e.stopPropagation(); onPublish(); }}
@@ -649,25 +819,34 @@ function PromptListItem({
   prompt,
   onSelect,
   onEdit: _onEdit,
+  onPublish,
+  onToggleFavorite,
   onFeedback: _onFeedback,
 }: {
   prompt: Prompt;
   onSelect: () => void;
   onEdit: () => void;
+  onPublish?: () => void;
+  onToggleFavorite: () => void;
   onFeedback: (feedback: 'thumbs_up' | 'thumbs_down') => void;
 }) {
   const tags = parseTags(prompt.tags);
+  const rating = prompt.thumbsUp + prompt.thumbsDown > 0
+    ? Math.round((prompt.thumbsUp / (prompt.thumbsUp + prompt.thumbsDown)) * 100)
+    : null;
 
   return (
     <div
-      className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+      className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
       onClick={onSelect}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-1">
           <h3 className="font-medium truncate">{prompt.title}</h3>
-          {prompt.isFavorite && (
-            <Star weight="fill" className="h-4 w-4 fill-primary text-primary flex-shrink-0" />
+          {prompt.status !== 'published' && (
+            <Badge variant="outline" className="text-xs">
+              {prompt.status}
+            </Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground truncate">{prompt.description}</p>
@@ -680,19 +859,65 @@ function PromptListItem({
             ))}
           </div>
         )}
+        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground font-mono tabular-nums">
+          <span>{prompt.useCount} usos</span>
+          {rating !== null && (
+            <>
+              <span>•</span>
+              <span className="text-success">{rating}% útil</span>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="hidden md:flex items-center gap-2 flex-shrink-0">
         <Badge className={cn("text-xs", CATEGORY_STYLE)}>
           {prompt.category.name}
         </Badge>
         <Badge variant="outline" className="text-xs font-mono tabular-nums">v{prompt.version}</Badge>
-        <span className="text-xs text-muted-foreground font-mono tabular-nums">{prompt.useCount} usos</span>
       </div>
 
-      <Button variant="default" size="sm" className="flex-shrink-0">
-        Usar
-      </Button>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2"
+          aria-label={prompt.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+        >
+          <Star
+            weight={prompt.isFavorite ? 'fill' : 'regular'}
+            className={cn('h-4 w-4', prompt.isFavorite && 'fill-primary text-primary')}
+          />
+        </Button>
+        {onPublish && prompt.status === 'draft' && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPublish();
+            }}
+          >
+            Publicar
+          </Button>
+        )}
+        <Button
+          variant="default"
+          size="sm"
+          className="flex-shrink-0 h-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+        >
+          Usar
+        </Button>
+      </div>
     </div>
   );
 }

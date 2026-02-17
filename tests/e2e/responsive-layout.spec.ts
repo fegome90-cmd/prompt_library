@@ -84,7 +84,7 @@ test.describe('Layout - Grid/List View Toggle', () => {
 
     // Navigate back
     await libraryPage.clickLibraryTab();
-    await libraryPage.waitForPrompts();
+    await expect(libraryPage.libraryTab).toHaveAttribute('data-state', 'active');
 
     // List view should persist (component state)
     // Note: This may not persist across navigation depending on implementation
@@ -230,7 +230,7 @@ test.describe('Layout - Prompt Cards', () => {
     await libraryPage.waitForPrompts();
 
     // Get all visible prompt cards
-    const cards = page.locator('.group.rounded-lg.border');
+    const cards = page.locator('[data-testid="prompt-card"]');
     const count = await cards.count();
 
     if (count >= 2) {
@@ -250,7 +250,7 @@ test.describe('Layout - Prompt Cards', () => {
     await libraryPage.goto();
     await libraryPage.waitForPrompts();
 
-    const firstCard = page.locator('.group.rounded-lg.border').first();
+    const firstCard = page.locator('[data-testid="prompt-card"]').first();
 
     // Hover over card
     await firstCard.hover();
@@ -268,10 +268,10 @@ test.describe('Layout - Prompt Cards', () => {
     await libraryPage.waitForPrompts();
 
     // Check for tag badges in cards
-    const tags = page.locator('.group.rounded-lg.border [class*="badge"]').first();
+    const tags = page.locator('[data-testid="prompt-card"] [class*="badge"]').first();
 
     // At least some cards should have tags
-    const tagCount = await page.locator('.group.rounded-lg.border [class*="badge"]').count();
+    const tagCount = await page.locator('[data-testid="prompt-card"] [class*="badge"]').count();
     expect(tagCount).toBeGreaterThanOrEqual(0);
   });
 

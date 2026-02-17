@@ -35,12 +35,12 @@ export class LibraryPage {
     this.mainTabsList = page.locator('[role="tablist"]').first();
 
     // Search and filter controls - scoped to main content area
-    this.searchInput = page.locator('main input[placeholder*="Buscar prompts"]').first();
-    this.categorySelect = page.locator('main button[role="combobox"]').first();
+    this.searchInput = page.locator('[data-testid="header-search"]:visible, [data-testid="search-input"]:visible').first();
+    this.categorySelect = page.locator('button[aria-label="Filtrar por categoría"]:visible').first();
 
     // View mode toggle - buttons inside the border group
-    this.gridViewButton = page.locator('.flex.border button').first();
-    this.listViewButton = page.locator('.flex.border button').last();
+    this.gridViewButton = page.locator('[data-testid="view-toggle-grid"]:visible').first();
+    this.listViewButton = page.locator('[data-testid="view-toggle-list"]:visible').first();
 
     // Tabs - scoped to main tablist
     this.libraryTab = this.mainTabsList.getByRole('tab', { name: /Biblioteca/i });
@@ -48,8 +48,8 @@ export class LibraryPage {
     this.statsTab = this.mainTabsList.getByRole('tab', { name: /Estad.sticas/i });
 
     // Prompt display elements
-    this.promptCards = page.locator('.group.rounded-lg.border');
-    this.promptListItems = page.locator('.flex.items-center.gap-4.p-4.rounded-lg');
+    this.promptCards = page.locator('[data-testid="prompt-card"]');
+    this.promptListItems = page.locator('main .space-y-2 > div');
     this.noResultsMessage = page.locator('text=No se encontraron prompts');
 
     // Actions
@@ -59,7 +59,7 @@ export class LibraryPage {
     this.headerTitle = page.locator('h1:has-text("Prompt Manager")');
 
     // Banners
-    this.securityBanner = page.locator('[class*="warning"]').first();
+    this.securityBanner = page.getByText('Recordatorio de Seguridad').first();
     this.errorBanner = page.locator('[class*="destructive"]').first();
   }
 
@@ -67,7 +67,7 @@ export class LibraryPage {
    * Navigate to the library page
    */
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto('/app');
     await this.page.waitForLoadState('networkidle');
   }
 
@@ -76,11 +76,11 @@ export class LibraryPage {
    */
   async waitForPageLoad() {
     // Wait for hydration to complete
-    await this.page.waitForSelector('h1:has-text("Prompt Manager")', { timeout: 15000 });
+    await this.page.waitForSelector('header h1:has-text("Prompt Manager")', { timeout: 15000 });
     // Wait for either loading spinner to disappear or prompts to appear
     await this.page.waitForFunction(() => {
       const spinner = document.querySelector('.animate-spin');
-      const prompts = document.querySelectorAll('.group.rounded-lg.border');
+      const prompts = document.querySelectorAll('[data-testid="prompt-card"]');
       return !spinner || prompts.length > 0;
     }, { timeout: 30000 });
   }
@@ -89,9 +89,7 @@ export class LibraryPage {
    * Search for prompts by text
    */
   async searchPrompts(query: string) {
-    // Use more specific selector for the main search input
-    const mainSearchInput = this.page.locator('main').getByPlaceholder('Buscar prompts...');
-    await mainSearchInput.fill(query);
+    await this.searchInput.fill(query);
     // Wait for search to process (debounced)
     await this.page.waitForTimeout(500);
     await this.page.waitForLoadState('networkidle');
@@ -101,8 +99,7 @@ export class LibraryPage {
    * Clear the search input
    */
   async clearSearch() {
-    const mainSearchInput = this.page.locator('main').getByPlaceholder('Buscar prompts...');
-    await mainSearchInput.clear();
+    await this.searchInput.clear();
     await this.page.waitForTimeout(500);
     await this.page.waitForLoadState('networkidle');
   }
@@ -120,10 +117,7 @@ export class LibraryPage {
    * Switch to grid view
    */
   async switchToGridView() {
-    // The view toggle is a group of 2 buttons with border
-    const viewToggle = this.page.locator('.flex.border');
-    const firstButton = viewToggle.locator('button').first();
-    await firstButton.click();
+    await this.gridViewButton.click();
     await this.page.waitForTimeout(300);
   }
 
@@ -131,10 +125,7 @@ export class LibraryPage {
    * Switch to list view
    */
   async switchToListView() {
-    // The view toggle is a group of 2 buttons with border
-    const viewToggle = this.page.locator('.flex.border');
-    const lastButton = viewToggle.locator('button').last();
-    await lastButton.click();
+    await this.listViewButton.click();
     await this.page.waitForTimeout(300);
   }
 
@@ -214,7 +205,7 @@ export class LibraryPage {
    * Wait for prompts to load
    */
   async waitForPrompts() {
-    await this.page.waitForSelector('.group.rounded-lg.border', {
+    await this.page.waitForSelector('[data-testid="prompt-card"]', {
       timeout: 15000,
       state: 'visible'
     });

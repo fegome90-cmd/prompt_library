@@ -3,8 +3,8 @@
 # =============================================================================
 # Última actualización: 2026-02-17
 # Total WOs: 22
-# Completados: 15
-# Pendientes: 7
+# Completados: 22
+# Pendientes: 0
 # =============================================================================
 
 ---
@@ -21,9 +21,9 @@ resumen:
     P3: 5
 
   por_estado:
-    completados: 15
+    completados: 22
     en_progreso: 0
-    pendientes: 7
+    pendientes: 0
 
   tiempo_invertido: "~4 horas + frontend plan en ejecución"
 
@@ -458,7 +458,7 @@ WO-0020:
     - WO-0019
   archivos:
     - src/app/app/page.tsx
-    - src/components/prompt-manager/
+    - src/__tests__/app/a11y-smoke.test.ts
   criterios_aceptacion: |
     - Header de /app mejora legibilidad y acceso a acciones frecuentes
     - Search/filter/view toggle mantienen comportamiento actual
@@ -467,6 +467,13 @@ WO-0020:
     - bun run lint
     - bun run test:run
     - bun run build
+  notas: |
+    Cierre WO-0020 verificado.
+    - Header reorganizado en dos capas (contexto + controles operativos)
+    - Controles desktop colapsables (search, categoría, toggle de vista)
+    - Barra mobile sticky con búsqueda y botón de filtros
+    - Drawer mobile implementado con `Sheet` sin nuevas dependencias
+    - Contratos `data-testid` preservados: header-search, search-input, view-toggle, view-toggle-grid, view-toggle-list
 
 WO-0021:
   id: WO-0021
@@ -481,7 +488,7 @@ WO-0021:
     - WO-0019
   archivos:
     - src/app/app/page.tsx
-    - src/components/prompt-manager/
+    - src/__tests__/app/a11y-smoke.test.ts
   criterios_aceptacion: |
     - PromptCard mejora acciones visibles y metadata legible
     - Empty states incluyen guidance accionable
@@ -490,6 +497,15 @@ WO-0021:
     - bun run lint
     - bun run test:run
     - bun run build
+  notas: |
+    Cierre WO-0021 verificado.
+    - PromptCard refactor: métricas sin duplicación y acciones visibles siempre
+    - Acciones `Usar`, `Publicar` (draft) y favorito con `stopPropagation`
+    - PromptListItem alineado en metadata + acciones
+    - Empty states mejorados:
+      - Biblioteca con filtros activos: CTA `Limpiar filtros`
+      - Biblioteca sin query/filtros: CTA `Crear tu primer prompt`
+      - Favoritos sin resultados: CTA `Explorar biblioteca` (+ limpiar si aplica)
 
 WO-0022:
   id: WO-0022
@@ -505,7 +521,7 @@ WO-0022:
     - WO-0021
   archivos:
     - src/app/app/page.tsx
-    - src/components/
+    - src/__tests__/app/a11y-smoke.test.ts
   criterios_aceptacion: |
     - Features opcionales detrás de rollout controlado
     - Sin impacto crítico en bundle/performance
@@ -515,9 +531,18 @@ WO-0022:
     - bun run test:run
     - bun run build
   notas: |
-    Command palette implementada:
-    - Atajo de teclado Cmd+K / Ctrl+K
-    - Navegación: Biblioteca, Favoritos, Estadísticas
-    - Acciones: Nuevo prompt
-    - Vista: Cuadrícula / Lista
-    - Hint de teclado visible en corner inferior derecho
+    Cierre WO-0022 verificado.
+    - Smoke A11y ampliado para controles críticos de /app
+    - Validaciones agregadas:
+      - `aria-label` en botón de filtros mobile y toggles de vista
+      - Presencia de drawer de filtros (`SheetTitle`)
+      - Contratos `data-testid` críticos presentes
+    - Suite E2E Playwright alineada al VU actual de `/app`:
+      - `LibraryPage.goto()` actualizado a `/app` (antes `/`)
+      - Selectores frágiles migrados a `data-testid` y `aria-label` estables
+      - Expectations de empty state actualizadas al flujo con filtros activos
+    - Gates ejecutados:
+      - `bun run lint` ✅ (0 errores, warnings preexistentes)
+      - `bun run test:run` ✅ (177 passed, 17 skipped)
+      - `bun run test:e2e` ✅ (76 passed)
+      - `bun run build` ✅
