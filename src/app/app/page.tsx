@@ -200,7 +200,8 @@ export default function PromptManagerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-x-clip">
+      <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_20%_0%,hsl(var(--primary)/0.18),transparent_36%),radial-gradient(circle_at_80%_100%,hsl(var(--primary)/0.12),transparent_42%)]" />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-background focus:text-foreground focus:border"
@@ -209,16 +210,16 @@ export default function PromptManagerPage() {
       </a>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3 space-y-3">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-[0_1px_0_hsl(var(--border))]">
+        <div className="container mx-auto px-4 py-3 space-y-3 relative">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex-shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
                 <Books weight="regular" className="h-5 w-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg font-semibold truncate">Prompt Manager</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">
+                <h1 className="text-lg font-semibold tracking-tight truncate">Prompt Manager</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block uppercase tracking-[0.08em]">
                   Biblioteca / {getTabLabel(activeTab)} • {prompts.length} prompts
                 </p>
               </div>
@@ -271,7 +272,7 @@ export default function PromptManagerPage() {
             <div
               id="desktop-controls"
               className={cn(
-                'hidden md:grid grid-cols-[minmax(0,1fr)_180px_auto] items-center gap-3 transition-all duration-200',
+                'hidden md:grid grid-cols-[minmax(0,1fr)_180px_auto] items-center gap-3 transition-all duration-200 p-2 rounded-xl border bg-card/40 backdrop-blur-sm',
                 desktopControlsCollapsed && 'max-h-0 opacity-0 overflow-hidden pointer-events-none'
               )}
             >
@@ -515,9 +516,9 @@ export default function PromptManagerPage() {
 
       {/* Main content */}
       <main id="main-content" className="container mx-auto px-4 py-4 flex-1">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4 relative z-10">
           <div className="flex items-center justify-between gap-3">
-            <TabsList>
+            <TabsList className="bg-card/60 border border-border/60">
               <TabsTrigger value="library" className="gap-1" aria-label="Biblioteca">
                 <Books weight="regular" className="h-4 w-4" />
                 <span className="hidden sm:inline">Biblioteca</span>
@@ -562,7 +563,7 @@ export default function PromptManagerPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {filteredPrompts.map(prompt => (
                       <PromptListItem
                         key={prompt.id}
@@ -657,7 +658,7 @@ export default function PromptManagerPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-auto py-4">
+      <footer className="border-t mt-auto py-4 relative z-10">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>
             Prompt Manager © 2025 •
@@ -716,7 +717,7 @@ function PromptCard({
   return (
     <div
       data-testid="prompt-card"
-      className="group rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
+      className="group rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_hsl(var(--primary)/0.15)] transition-all cursor-pointer overflow-hidden"
       onClick={onSelect}
     >
       <div className="p-4 space-y-3">
@@ -736,7 +737,7 @@ function PromptCard({
           </div>
         </div>
 
-        <h3 className="font-medium line-clamp-1">{prompt.title}</h3>
+        <h3 className="font-semibold tracking-tight line-clamp-1">{prompt.title}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">
           {prompt.description}
         </p>
@@ -773,7 +774,7 @@ function PromptCard({
         </div>
       </div>
 
-      <div className="border-t bg-muted/30 px-3 py-2 flex items-center justify-between gap-2">
+      <div className="border-t bg-gradient-to-r from-muted/20 via-muted/10 to-transparent px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -837,7 +838,7 @@ function PromptListItem({
 
   return (
     <div
-      className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+      className="flex items-center gap-3 p-4 rounded-xl border border-border/70 bg-card/40 hover:bg-accent/60 cursor-pointer transition-colors"
       onClick={onSelect}
     >
       <div className="flex-1 min-w-0">
