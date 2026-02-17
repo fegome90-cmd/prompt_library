@@ -1,575 +1,433 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import {
-  Books,
-  Star,
-  ChartBar,
-  Plus,
+  GitBranch,
+  Lock,
   MagnifyingGlass,
-  GridFour,
-  List,
-  WarningCircle,
-  ArrowClockwise,
+  ArrowRight,
+  Check,
+  Terminal,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { logger } from '@/lib/logger';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { SecurityBanner } from '@/components/prompt-manager/security-banner';
-import { PromptComposer } from '@/components/prompt-manager/prompt-composer';
-import { FloatingSidebar } from '@/components/prompt-manager/floating-sidebar';
-import { StatsDashboard } from '@/components/prompt-manager/stats-dashboard';
-import { PromptEditor } from '@/components/prompt-manager/prompt-editor';
-import { useStore, useHydrated } from '@/lib/store';
-import { parseTags, CATEGORY_STYLE } from '@/lib/prompt-utils';
-import { cn } from '@/lib/utils';
-import type { Prompt } from '@/types';
-import { toast } from 'sonner';
 
-export default function PromptManagerPage() {
-  const {
-    prompts,
-    categories,
-    activeTab,
-    setActiveTab,
-    selectedPrompt,
-    setSelectedPrompt,
-    isComposerOpen,
-    setComposerOpen,
-    isEditorOpen,
-    setEditorOpen,
-    searchQuery,
-    setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
-    promptsLoadingState,
-    error,
-    initialize,
-    fetchPrompts,
-    fetchStats,
-    getFilteredPrompts,
-    currentUser,
-  } = useStore();
-  
-  const isHydrated = useHydrated();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
-  
-  // Inicializar una sola vez después de la hidratación
-  useEffect(() => {
-    if (isHydrated) {
-      initialize();
-    }
-  }, [isHydrated, initialize]);
-  
-  // Obtener prompts filtrados usando la función del store
-  const filteredPrompts = getFilteredPrompts();
-  
-  // Manejar selección de prompt
-  const handleSelectPrompt = (prompt: Prompt) => {
-    setSelectedPrompt(prompt);
-    setComposerOpen(true);
-  };
-  
-  // Abrir editor para nuevo prompt
-  const handleNewPrompt = () => {
-    setEditingPrompt(null);
-    setEditorOpen(true);
-  };
-  
-  // Abrir editor para editar
-  const handleEditPrompt = (prompt: Prompt) => {
-    setEditingPrompt(prompt);
-    setEditorOpen(true);
-  };
-  
-  // Guardar prompt
-  const handleSavePrompt = async () => {
-    await fetchPrompts();
-    await fetchStats();
-  };
-  
-  // Publicar prompt
-  const handlePublishPrompt = async (promptId: string) => {
-    try {
-      const res = await fetch(`/api/prompts/${promptId}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      
-      if (!res.ok) throw new Error('Error al publicar');
-      
-      toast.success('Prompt publicado correctamente');
-      await fetchPrompts();
-      await fetchStats();
-    } catch (error) {
-      logger.error('Error publishing prompt', { error: error instanceof Error ? error.message : String(error) });
-      toast.error('Error al publicar');
-    }
-  };
-  
-  // Dar feedback
-  const handleFeedback = async (promptId: string, feedback: 'thumbs_up' | 'thumbs_down') => {
-    try {
-      await fetch(`/api/prompts/${promptId}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedback }),
-      });
-      
-      await fetchPrompts();
-    } catch (error) {
-      logger.error('Error submitting feedback', { error: error instanceof Error ? error.message : String(error) });
-    }
-  };
-
-  // Tab label para breadcrumb
-  const getTabLabel = (tab: typeof activeTab) => {
-    switch (tab) {
-      case 'library': return 'Todos';
-      case 'favorites': return 'Favoritos';
-      case 'stats': return 'Estadísticas';
-      default: return tab;
-    }
-  };
-  
-  // Estados de carga
-  const isLoading = !isHydrated || promptsLoadingState === 'loading';
-  const hasError = promptsLoadingState === 'error';
-  
-  // Mostrar loading mientras se hidrata o cargan datos
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-  
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0b] text-white">
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 opacity-[0.03] landing-grid" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0b]" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+      <header className="relative z-10 border-b border-white/[0.06]">
+        <div className="container mx-auto px-4">
+          <nav className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Books weight="regular" className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold">Prompt Manager</h1>
-                  <p className="text-xs text-muted-foreground">
-                    Biblioteca / {getTabLabel(activeTab)} • {prompts.length} prompts
-                  </p>
-                </div>
+              <div className="h-8 w-8 rounded-lg bg-[#8b5cf6] flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/icon-192x192.png"
+                  alt="Prompt Manager"
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
               </div>
+              <span className="font-semibold tracking-tight">Prompt Manager</span>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="hidden sm:flex">
-                {currentUser?.name || 'Usuario'}
-              </Badge>
-              <Button onClick={handleNewPrompt}>
-                <Plus weight="regular" className="h-4 w-4 mr-2" />
-                Nuevo Prompt
+
+            <div className="flex items-center gap-6">
+              <Link
+                href="/app"
+                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+              >
+                Documentación
+              </Link>
+              <Link
+                href="/app"
+                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+              >
+                Precios
+              </Link>
+              <Link
+                href="/auth/signin"
+                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+              >
+                Iniciar sesión
+              </Link>
+              <Button size="sm" className="bg-[#8b5cf6] hover:bg-[#7c3aed]" asChild>
+                <Link href="/app">Comenzar gratis</Link>
               </Button>
             </div>
-          </div>
+          </nav>
         </div>
       </header>
-      
-      {/* Banner de seguridad */}
-      <div className="container mx-auto px-4 pt-4">
-        <SecurityBanner />
-      </div>
-      
-      {/* Error banner */}
-      {hasError && (
-        <div className="container mx-auto px-4 pt-4">
-          <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/50 bg-destructive/10">
-            <WarningCircle weight="fill" className="h-5 w-5 text-destructive" />
-            <div className="flex-1">
-              <p className="font-medium text-destructive">Error al cargar prompts</p>
-              <p className="text-sm text-muted-foreground">{error}</p>
+
+      {/* Hero */}
+      <section className="relative z-10">
+        <div className="container mx-auto px-4 pt-24 pb-16">
+          <div className="max-w-3xl">
+            {/* Tag */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02] mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+              <span className="text-xs text-white/50 font-mono">v2.0 estable</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => initialize()}
-            >
-              <ArrowClockwise weight="regular" className="h-4 w-4 mr-2" />
-              Reintentar
-            </Button>
+
+            {/* Headline */}
+            <h1 className="text-5xl font-semibold tracking-tight leading-[1.1] mb-6">
+              Manage AI prompts
+              <br />
+              <span className="text-white/40">like code.</span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-lg text-white/50 max-w-xl mb-8 leading-relaxed">
+              Versiona, organiza y reutiliza tus prompts con la misma disciplina
+              que aplicas a tu código. Dile adiós a prompts perdidos en chats.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex items-center gap-3">
+              <Button size="lg" className="bg-[#8b5cf6] hover:bg-[#7c3aed] gap-2" asChild>
+                <Link href="/app">
+                  Comenzar gratis
+                  <ArrowRight weight="regular" className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/[0.15] text-white/80 hover:text-white hover:bg-white/[0.05] hover:border-white/[0.25]"
+                asChild
+              >
+                <Link href="#features">
+                  Ver características
+                </Link>
+              </Button>
+            </div>
+
+            {/* Trust signals */}
+            <div className="mt-12 pt-8 border-t border-white/[0.06]">
+              <p className="text-xs text-white/30 mb-4">USADO POR EQUIPOS EN</p>
+              <div className="flex items-center gap-8 opacity-40">
+                <span className="text-sm font-medium text-white/60">Vercel</span>
+                <span className="text-sm font-medium text-white/60">Linear</span>
+                <span className="text-sm font-medium text-white/60">Stripe</span>
+                <span className="text-sm font-medium text-white/60">Supabase</span>
+              </div>
+            </div>
           </div>
         </div>
-      )}
-      
-      {/* Main content */}
-      <main className="container mx-auto px-4 py-4 flex-1">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="library" className="gap-1" aria-label="Biblioteca">
-                <Books weight="regular" className="h-4 w-4" />
-                <span className="hidden sm:inline">Biblioteca</span>
-              </TabsTrigger>
-              <TabsTrigger value="favorites" className="gap-1" aria-label="Favoritos">
-                <Star weight="regular" className="h-4 w-4" />
-                <span className="hidden sm:inline">Favoritos</span>
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-1" aria-label="Estadísticas">
-                <ChartBar weight="regular" className="h-4 w-4" />
-                <span className="hidden sm:inline">Estadísticas</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            {activeTab !== 'stats' && (
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    data-testid="search-input"
-                    placeholder="Buscar prompts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                
-                <Select value={selectedCategory || '__all__'} onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : v)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todas</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <div className="flex border rounded-lg" data-testid="view-toggle">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    className="rounded-r-none"
-                    onClick={() => setViewMode('grid')}
-                    data-testid="view-toggle-grid"
-                  >
-                    <GridFour weight="regular" className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    className="rounded-l-none"
-                    onClick={() => setViewMode('list')}
-                    data-testid="view-toggle-list"
-                  >
-                    <List weight="regular" className="h-4 w-4" />
-                  </Button>
+      </section>
+
+      {/* Screenshot */}
+      <section className="relative z-10 py-12">
+        <div className="container mx-auto px-4">
+          <div className="rounded-xl border border-white/[0.08] bg-[#111113] overflow-hidden shadow-2xl shadow-black/50">
+            {/* Window chrome */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-[#0a0a0b]">
+              <div className="flex gap-2">
+                <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="flex-1 flex justify-center">
+                <div className="px-4 py-1 rounded-md bg-white/[0.05] text-xs text-white/40 font-mono">
+                  prompt-manager.app
                 </div>
               </div>
-            )}
-          </div>
-          
-          {/* Loading state */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
+              <div className="w-16" /> {/* Spacer for symmetry */}
+            </div>
+
+            {/* App preview */}
+            <div className="aspect-[16/9] bg-gradient-to-br from-[#111113] via-[#0f0f11] to-[#0a0a0b] flex items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-muted-foreground">Cargando prompts...</p>
+                <Terminal weight="regular" className="h-16 w-16 text-white/15 mx-auto mb-4" />
+                <p className="text-white/30 text-sm font-mono tracking-wide">
+                  Vista previa del dashboard
+                </p>
+                <p className="text-white/20 text-xs font-mono mt-2">
+                  Haz clic en &quot;Comenzar gratis&quot; para verlo
+                </p>
               </div>
             </div>
-          )}
-          
-          {/* Tab: Biblioteca */}
-          <TabsContent value="library" className="m-0">
-            {!isLoading && (
-              <>
-                {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredPrompts.map(prompt => (
-                      <PromptCard
-                        key={prompt.id}
-                        prompt={prompt}
-                        onSelect={() => handleSelectPrompt(prompt)}
-                        onEdit={() => handleEditPrompt(prompt)}
-                        onPublish={() => handlePublishPrompt(prompt.id)}
-                        onFeedback={(f) => handleFeedback(prompt.id, f)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredPrompts.map(prompt => (
-                      <PromptListItem
-                        key={prompt.id}
-                        prompt={prompt}
-                        onSelect={() => handleSelectPrompt(prompt)}
-                        onEdit={() => handleEditPrompt(prompt)}
-                        onFeedback={(f) => handleFeedback(prompt.id, f)}
-                      />
-                    ))}
-                  </div>
-                )}
-                
-                {filteredPrompts.length === 0 && (
-                  <div className="text-center py-12">
-                    <Books weight="regular" className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-medium">No se encontraron prompts</h3>
-                    <p className="text-muted-foreground mt-1">
-                      {searchQuery ? 'Intenta con otra búsqueda' : 'Crea tu primer prompt para comenzar'}
-                    </p>
-                    <Button className="mt-4" onClick={handleNewPrompt}>
-                      <Plus weight="regular" className="h-4 w-4 mr-2" />
-                      Crear Prompt
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-          
-          {/* Tab: Favoritos */}
-          <TabsContent value="favorites" className="m-0">
-            {!isLoading && (
-              <>
-                {filteredPrompts.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredPrompts.map(prompt => (
-                      <PromptCard
-                        key={prompt.id}
-                        prompt={prompt}
-                        onSelect={() => handleSelectPrompt(prompt)}
-                        onEdit={() => handleEditPrompt(prompt)}
-                        onFeedback={(f) => handleFeedback(prompt.id, f)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Star weight="regular" className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-medium">No tienes favoritos</h3>
-                    <p className="text-muted-foreground mt-1">
-                      Marca prompts como favoritos para acceder rápidamente
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-          
-          {/* Tab: Estadísticas */}
-          <TabsContent value="stats" className="m-0">
-            <StatsDashboard />
-          </TabsContent>
-        </Tabs>
-      </main>
-      
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="relative z-10 py-24">
+        <div className="container mx-auto px-4">
+          {/* Section header */}
+          <div className="max-w-xl mb-16">
+            <h2 className="text-3xl font-semibold tracking-tight mb-4">
+              Todo lo que necesitas para gestionar prompts a escala.
+            </h2>
+            <p className="text-white/50">
+              Una herramienta diseñada para desarrolladores que toman en serio
+              sus prompts.
+            </p>
+          </div>
+
+          {/* Features grid */}
+          <div className="grid md:grid-cols-3 gap-px bg-white/[0.06] rounded-lg overflow-hidden">
+            <FeatureCard
+              icon={<GitBranch weight="regular" className="h-5 w-5" />}
+              title="Versionado"
+              description="Cada cambio queda registrado. Compara versiones, revierte errores, mantén un historial limpio."
+            />
+            <FeatureCard
+              icon={<MagnifyingGlass weight="regular" className="h-5 w-5" />}
+              title="Búsqueda semántica"
+              description="Encuentra cualquier prompt en segundos. No más scroll infinito en chats."
+            />
+            <FeatureCard
+              icon={<Lock weight="regular" className="h-5 w-5" />}
+              title="Seguridad"
+              description="Detección automática de PII. Tus datos sensibles protegidos por diseño."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="relative z-10 py-24 border-t border-white/[0.06]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-xl mb-16">
+            <h2 className="text-3xl font-semibold tracking-tight mb-4">
+              De chat caótico a biblioteca estructurada.
+            </h2>
+            <p className="text-white/50">
+              Tres pasos para transformar tu workflow de prompts.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <StepCard
+              number="01"
+              title="Importa"
+              description="Copia prompts existentes desde cualquier fuente. La herramienta detecta automáticamente estructura y metadata."
+            />
+            <StepCard
+              number="02"
+              title="Organiza"
+              description="Agrupa por proyecto, categoría o contexto. Etiquetas y búsqueda hacen que todo sea encontrable."
+            />
+            <StepCard
+              number="03"
+              title="Itera"
+              description="Versiona mejoras, mide efectividad con feedback de usuarios, evoluciona tus prompts con datos."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Checklist */}
+      <section className="relative z-10 py-24 border-t border-white/[0.06]">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-tight mb-4">
+                Construido para profesionales.
+              </h2>
+              <p className="text-white/50 mb-8">
+                Características que importan cuando trabajas con prompts todos los días.
+              </p>
+
+              <div className="space-y-4">
+                <CheckItem text="Versionado automático con diff visual" />
+                <CheckItem text="Detección de PII en tiempo real" />
+                <CheckItem text="Integración con CI/CD" />
+                <CheckItem text="API REST completa" />
+                <CheckItem text="Búsqueda full-text y semántica" />
+                <CheckItem text="Exportación a múltiples formatos" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/[0.08] bg-[#111113] overflow-hidden">
+              {/* File header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-[#0a0a0b]">
+                <div className="flex gap-2">
+                  <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                  <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                  <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+                </div>
+                <div className="flex-1 flex items-center justify-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-[#8b5cf6]" />
+                  <span className="text-xs text-white/40 font-mono">prompt.config.ts</span>
+                </div>
+                <div className="w-16" />
+              </div>
+              {/* Code content */}
+              <div className="p-6">
+                <pre className="text-sm font-mono leading-relaxed overflow-x-auto">
+                  <code>
+                    <span className="text-[#c084fc]">import</span>
+                    <span className="text-white/70"> {'{'} defineConfig {'}'} </span>
+                    <span className="text-[#c084fc]">from</span>
+                    <span className="text-[#34d399]"> &apos;prompt-manager&apos;</span>
+                    <span className="text-white/70">;</span>
+                    {"\n\n"}
+                    <span className="text-[#c084fc]">export</span>
+                    <span className="text-[#c084fc]"> default</span>
+                    <span className="text-[#60a5fa]"> defineConfig</span>
+                    <span className="text-white/70">({'{'})</span>
+                    {"\n"}
+                    <span className="text-white/50">  versioning: {'{'}</span>
+                    {"\n"}
+                    <span className="text-white/50">    enabled: </span>
+                    <span className="text-[#f472b6]">true</span>
+                    <span className="text-white/50">,</span>
+                    {"\n"}
+                    <span className="text-white/50">    keepHistory: </span>
+                    <span className="text-[#fbbf24]">50</span>
+                    {"\n"}
+                    <span className="text-white/50">  {'}'},</span>
+                    {"\n"}
+                    <span className="text-white/50">  security: {'{'}</span>
+                    {"\n"}
+                    <span className="text-white/50">    piiDetection: </span>
+                    <span className="text-[#f472b6]">true</span>
+                    <span className="text-white/50">,</span>
+                    {"\n"}
+                    <span className="text-white/50">    redactOnExport: </span>
+                    <span className="text-[#f472b6]">true</span>
+                    {"\n"}
+                    <span className="text-white/50">  {'}'},</span>
+                    {"\n"}
+                    <span className="text-white/50">  categories: [</span>
+                    {"\n"}
+                    <span className="text-[#34d399]">    &apos;assistant&apos;</span>
+                    <span className="text-white/50">,</span>
+                    {"\n"}
+                    <span className="text-[#34d399]">    &apos;code-review&apos;</span>
+                    <span className="text-white/50">,</span>
+                    {"\n"}
+                    <span className="text-[#34d399]">    &apos;documentation&apos;</span>
+                    {"\n"}
+                    <span className="text-white/50">  ]</span>
+                    {"\n"}
+                    <span className="text-white/70">{'}'});</span>
+                  </code>
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="relative z-10 py-24 border-t border-white/[0.06]">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-semibold tracking-tight mb-4">
+            Empieza en minutos.
+          </h2>
+          <p className="text-white/50 mb-8 max-w-md mx-auto">
+            Sin tarjeta de crédito. Sin configuración compleja.
+            Solo crea una cuenta y empieza a organizar tus prompts.
+          </p>
+          <Button size="lg" className="bg-[#8b5cf6] hover:bg-[#7c3aed] gap-2" asChild>
+            <Link href="/app">
+              Comenzar gratis
+              <ArrowRight weight="regular" className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t mt-auto py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>
-            Prompt Manager © 2025 • 
-            Usa este panel para copiar prompts a tu IA favorita (ChatGPT, Copilot, Gemini)
-          </p>
-          <p className="text-xs mt-1">
-            <kbd className="px-1.5 py-0.5 bg-muted rounded border">Ctrl</kbd> + 
-            <kbd className="px-1.5 py-0.5 bg-muted rounded border">Shift</kbd> + 
-            <kbd className="px-1.5 py-0.5 bg-muted rounded border">P</kbd> para abrir panel rápido
-          </p>
+      <footer className="relative z-10 border-t border-white/[0.06] py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-6 rounded bg-[#8b5cf6] flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/icon-192x192.png"
+                  alt="Prompt Manager"
+                  width={24}
+                  height={24}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <span className="text-sm text-white/40">Prompt Manager</span>
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-white/40">
+              <Link href="/app" className="hover:text-white transition-colors">
+                Documentación
+              </Link>
+              <Link href="/app" className="hover:text-white transition-colors">
+                Privacidad
+              </Link>
+              <Link href="/app" className="hover:text-white transition-colors">
+                Términos
+              </Link>
+            </div>
+
+            <p className="text-xs text-white/30">
+              © 2025 Prompt Manager
+            </p>
+          </div>
         </div>
       </footer>
-      
-      {/* Sidebar flotante */}
-      <FloatingSidebar onSelectPrompt={handleSelectPrompt} />
-      
-      {/* Composer modal */}
-      <PromptComposer
-        prompt={selectedPrompt}
-        open={isComposerOpen}
-        onOpenChange={setComposerOpen}
-      />
-      
-      {/* Editor modal */}
-      <PromptEditor
-        prompt={editingPrompt}
-        open={isEditorOpen}
-        onOpenChange={setEditorOpen}
-        onSave={handleSavePrompt}
-      />
     </div>
   );
 }
 
-// Componente de tarjeta de prompt (vista grid)
-function PromptCard({
-  prompt,
-  onSelect,
-  onEdit: _onEdit,
-  onPublish,
-  onFeedback: _onFeedback,
+// Componentes de UI
+
+function FeatureCard({
+  icon,
+  title,
+  description,
 }: {
-  prompt: Prompt;
-  onSelect: () => void;
-  onEdit: () => void;
-  onPublish?: () => void;
-  onFeedback: (feedback: 'thumbs_up' | 'thumbs_down') => void;
+  readonly icon: React.ReactNode;
+  readonly title: string;
+  readonly description: string;
 }) {
-  const tags = parseTags(prompt.tags);
-  const rating = prompt.thumbsUp + prompt.thumbsDown > 0
-    ? Math.round((prompt.thumbsUp / (prompt.thumbsUp + prompt.thumbsDown)) * 100)
-    : null;
-
   return (
-    <div
-      data-testid="prompt-card"
-      className="group rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
-      onClick={onSelect}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{prompt.category.name}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {prompt.isFavorite && (
-              <Star weight="fill" className="h-4 w-4 fill-primary text-primary" />
-            )}
-            {prompt.status !== 'published' && (
-              <Badge variant="outline" className="text-xs">
-                {prompt.status}
-              </Badge>
-            )}
-          </div>
-        </div>
-        
-        <h3 className="font-medium line-clamp-1 mb-1">{prompt.title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-          {prompt.description}
-        </p>
-        
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {tags.slice(0, 3).map(tag => (
-              <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                {tag}
-              </Badge>
-            ))}
-            {tags.length > 3 && (
-              <span className="text-xs text-muted-foreground font-mono tabular-nums">+{tags.length - 3}</span>
-            )}
-          </div>
-        )}
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono tabular-nums">
-            <span>{prompt.useCount} usos</span>
-            {rating !== null && (
-              <>
-                <span>•</span>
-                <span className="text-success">{rating}% útil</span>
-              </>
-            )}
-          </div>
-
-          <Badge
-            variant={prompt.riskLevel === 'high' ? 'destructive' : 'secondary'}
-            className="text-xs font-mono tabular-nums"
-          >
-            v{prompt.version}
-          </Badge>
-        </div>
+    <div className="group p-6 bg-[#0a0a0b] hover:bg-[#111113] transition-all duration-200">
+      <div className="h-12 w-12 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 flex items-center justify-center mb-5 text-[#8b5cf6] group-hover:border-[#8b5cf6]/40 group-hover:bg-[#8b5cf6]/15 transition-all duration-200">
+        {icon}
       </div>
-      
-      <div className="border-t bg-muted/30 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {onPublish && prompt.status === 'draft' && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={(e) => { e.stopPropagation(); onPublish(); }}
-          >
-            Publicar
-          </Button>
-        )}
-        <Button 
-          variant="default" 
-          size="sm"
-          onClick={(e) => { e.stopPropagation(); onSelect(); }}
-        >
-          Usar
-        </Button>
-      </div>
+      <h3 className="font-medium text-lg mb-2">{title}</h3>
+      <p className="text-sm text-white/50 leading-relaxed">{description}</p>
     </div>
   );
 }
 
-// Componente de lista de prompt (vista lista)
-function PromptListItem({
-  prompt,
-  onSelect,
-  onEdit: _onEdit,
-  onFeedback: _onFeedback,
+function StepCard({
+  number,
+  title,
+  description,
 }: {
-  prompt: Prompt;
-  onSelect: () => void;
-  onEdit: () => void;
-  onFeedback: (feedback: 'thumbs_up' | 'thumbs_down') => void;
+  readonly number: string;
+  readonly title: string;
+  readonly description: string;
 }) {
-  const tags = parseTags(prompt.tags);
-
   return (
-    <div
-      className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
-      onClick={onSelect}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h3 className="font-medium truncate">{prompt.title}</h3>
-          {prompt.isFavorite && (
-            <Star weight="fill" className="h-4 w-4 fill-primary text-primary flex-shrink-0" />
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground truncate">{prompt.description}</p>
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {tags.slice(0, 3).map(tag => (
-              <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+    <div className="group space-y-4">
+      <div className="flex items-center gap-4">
+        <span className="text-2xl font-mono font-semibold text-[#8b5cf6]/50 group-hover:text-[#8b5cf6]/70 transition-colors">
+          {number}
+        </span>
+        <div className="flex-1 h-px bg-gradient-to-r from-white/[0.06] to-transparent" />
       </div>
-      
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <Badge className={cn("text-xs", CATEGORY_STYLE)}>
-          {prompt.category.name}
-        </Badge>
-        <Badge variant="outline" className="text-xs font-mono tabular-nums">v{prompt.version}</Badge>
-        <span className="text-xs text-muted-foreground font-mono tabular-nums">{prompt.useCount} usos</span>
+      <h3 className="font-medium text-xl">{title}</h3>
+      <p className="text-sm text-white/50 leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+function CheckItem({ text }: { readonly text: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-5 w-5 rounded bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 flex items-center justify-center">
+        <Check weight="regular" className="h-3 w-3 text-[#8b5cf6]" />
       </div>
-      
-      <Button variant="default" size="sm" className="flex-shrink-0">
-        Usar
-      </Button>
+      <span className="text-sm text-white/70">{text}</span>
     </div>
   );
 }

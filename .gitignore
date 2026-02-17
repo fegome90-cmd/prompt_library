@@ -55,3 +55,6 @@ server.log
 test-results/
 playwright-report/
 artifacts/
+
+# Screenshots
+.screenshots/

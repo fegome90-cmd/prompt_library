@@ -169,3 +169,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Landing page grid background - avoids hydration mismatch */
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
