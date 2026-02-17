@@ -535,7 +535,11 @@ export default function PromptManagerPage() {
           </div>
 
           {activeTab !== 'stats' && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/40 px-3 py-2">
+            <div
+              data-testid="library-summary"
+              aria-live="polite"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/40 px-3 py-2"
+            >
               <Badge variant="secondary" className="font-mono tabular-nums">
                 {filteredPrompts.length} / {prompts.length} visibles
               </Badge>
@@ -568,7 +572,7 @@ export default function PromptManagerPage() {
             {!isLoading && (
               <>
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div data-testid="prompts-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredPrompts.map(prompt => (
                       <PromptCard
                         key={prompt.id}
@@ -582,7 +586,7 @@ export default function PromptManagerPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div data-testid="prompts-list" className="space-y-3">
                     {filteredPrompts.map(prompt => (
                       <PromptListItem
                         key={prompt.id}
@@ -598,7 +602,7 @@ export default function PromptManagerPage() {
                 )}
 
                 {filteredPrompts.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div data-testid="library-empty-state" className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                       <Books weight="regular" className="h-8 w-8 text-muted-foreground" />
                     </div>
@@ -629,21 +633,37 @@ export default function PromptManagerPage() {
             {!isLoading && (
               <>
                 {filteredPrompts.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredPrompts.map(prompt => (
-                      <PromptCard
-                        key={prompt.id}
-                        prompt={prompt}
-                        onSelect={() => handleSelectPrompt(prompt)}
-                        onEdit={() => handleEditPrompt(prompt)}
-                        onPublish={() => handlePublishPrompt(prompt.id)}
-                        onToggleFavorite={() => void toggleFavorite(prompt.id)}
-                        onFeedback={(f) => handleFeedback(prompt.id, f)}
-                      />
-                    ))}
-                  </div>
+                  viewMode === 'grid' ? (
+                    <div data-testid="favorites-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredPrompts.map(prompt => (
+                        <PromptCard
+                          key={prompt.id}
+                          prompt={prompt}
+                          onSelect={() => handleSelectPrompt(prompt)}
+                          onEdit={() => handleEditPrompt(prompt)}
+                          onPublish={() => handlePublishPrompt(prompt.id)}
+                          onToggleFavorite={() => void toggleFavorite(prompt.id)}
+                          onFeedback={(f) => handleFeedback(prompt.id, f)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div data-testid="favorites-list" className="space-y-3">
+                      {filteredPrompts.map(prompt => (
+                        <PromptListItem
+                          key={prompt.id}
+                          prompt={prompt}
+                          onSelect={() => handleSelectPrompt(prompt)}
+                          onEdit={() => handleEditPrompt(prompt)}
+                          onPublish={() => handlePublishPrompt(prompt.id)}
+                          onToggleFavorite={() => void toggleFavorite(prompt.id)}
+                          onFeedback={(f) => handleFeedback(prompt.id, f)}
+                        />
+                      ))}
+                    </div>
+                  )
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div data-testid="favorites-empty-state" className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                       <Star weight="regular" className="h-8 w-8 text-muted-foreground" />
                     </div>
@@ -742,7 +762,9 @@ function PromptCard({
       <div className="p-4 space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{prompt.category.name}</span>
+            <Badge variant="outline" className="text-[10px] uppercase tracking-[0.08em]">
+              {prompt.category.name}
+            </Badge>
           </div>
           <div className="flex items-center gap-1">
             {prompt.isFavorite && (
@@ -756,8 +778,8 @@ function PromptCard({
           </div>
         </div>
 
-        <h3 className="font-semibold tracking-tight line-clamp-1">{prompt.title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <h3 className="font-semibold tracking-tight leading-tight line-clamp-1">{prompt.title}</h3>
+        <p className="text-sm text-muted-foreground/90 line-clamp-2">
           {prompt.description}
         </p>
 
@@ -799,7 +821,7 @@ function PromptCard({
             variant="ghost"
             size="sm"
             className="h-7 px-2"
-            aria-label={prompt.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            aria-label={prompt.isFavorite ? `Quitar de favoritos: ${prompt.title}` : `Agregar a favoritos: ${prompt.title}`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -869,7 +891,7 @@ function PromptListItem({
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground truncate">{prompt.description}</p>
+        <p className="text-sm text-muted-foreground/90 truncate">{prompt.description}</p>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {tags.slice(0, 3).map(tag => (
@@ -902,7 +924,7 @@ function PromptListItem({
           variant="ghost"
           size="sm"
           className="h-8 px-2"
-          aria-label={prompt.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          aria-label={prompt.isFavorite ? `Quitar de favoritos: ${prompt.title}` : `Agregar a favoritos: ${prompt.title}`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite();

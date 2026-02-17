@@ -502,10 +502,15 @@ WO-0021:
     - PromptCard refactor: métricas sin duplicación y acciones visibles siempre
     - Acciones `Usar`, `Publicar` (draft) y favorito con `stopPropagation`
     - PromptListItem alineado en metadata + acciones
+    - Jerarquía visual afinada en cards:
+      - Categoría presentada como badge editorial
+      - Descripción con mejor contraste y legibilidad
+      - `aria-label` contextual en favoritos (incluye título del prompt)
     - Empty states mejorados:
       - Biblioteca con filtros activos: CTA `Limpiar filtros`
       - Biblioteca sin query/filtros: CTA `Crear tu primer prompt`
       - Favoritos sin resultados: CTA `Explorar biblioteca` (+ limpiar si aplica)
+    - Favoritos ahora respeta `viewMode` (`grid`/`list`) igual que Biblioteca
 
 WO-0022:
   id: WO-0022
@@ -537,10 +542,16 @@ WO-0022:
       - `aria-label` en botón de filtros mobile y toggles de vista
       - Presencia de drawer de filtros (`SheetTitle`)
       - Contratos `data-testid` críticos presentes
+      - Región de resumen accesible (`aria-live="polite"`) para cambios de filtros/resultados
+      - Empty states identificables para biblioteca/favoritos (`data-testid`)
     - Suite E2E Playwright alineada al VU actual de `/app`:
       - `LibraryPage.goto()` actualizado a `/app` (antes `/`)
       - Selectores frágiles migrados a `data-testid` y `aria-label` estables
       - Expectations de empty state actualizadas al flujo con filtros activos
+      - Cobertura adicional:
+        - Navegación por teclado: visibilidad de skip link
+        - Flujo mobile filters drawer (`Abrir filtros` → `Lista` → `Aplicar`)
+        - Verificación de `stopPropagation` en acción favorito (no abre composer)
     - Gates ejecutados:
       - `bun run lint` ✅ (0 errores, warnings preexistentes)
       - `bun run test:run` ✅ (177 passed, 17 skipped)

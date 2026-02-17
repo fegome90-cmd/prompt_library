@@ -187,18 +187,14 @@ export class LibraryPage {
    * Check if in grid view mode
    */
   async isGridView(): Promise<boolean> {
-    const gridContainer = this.page.locator('.grid.grid-cols-1');
-    return await gridContainer.count() > 0;
+    return await this.page.locator('[data-testid="prompts-grid"]').count() > 0;
   }
 
   /**
    * Check if in list view mode
    */
   async isListView(): Promise<boolean> {
-    // List view has space-y-2 class on container
-    const tabsContent = this.page.locator('[role="tabpanel"]');
-    const listContainer = tabsContent.locator('.space-y-2');
-    return await listContainer.count() > 0;
+    return await this.page.locator('[data-testid="prompts-list"]').count() > 0;
   }
 
   /**

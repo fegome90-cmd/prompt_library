@@ -47,5 +47,11 @@ describe('A11y smoke checks', () => {
     expect(appPage).toContain('SheetTitle>Filtros de biblioteca');
     expect(appPage).toContain('aria-label="Vista cuadrícula"');
     expect(appPage).toContain('aria-label="Vista lista"');
+    expect(appPage).toContain('data-testid="prompts-grid"');
+    expect(appPage).toContain('data-testid="prompts-list"');
+    expect(appPage).toContain('data-testid="library-summary"');
+    expect(appPage).toContain('aria-live="polite"');
+    expect(appPage).toContain('data-testid="library-empty-state"');
+    expect(appPage).toContain('data-testid="favorites-empty-state"');
   });
 });
