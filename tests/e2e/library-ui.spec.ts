@@ -41,4 +41,22 @@ test.describe('Library UI behaviors', () => {
 
     await expect(page.locator('[role="dialog"]')).toHaveCount(0);
   });
+
+  test('toggles command hint visibility from settings panel', async ({ page }) => {
+    const libraryPage = new LibraryPage(page);
+    await libraryPage.goto();
+    await libraryPage.waitForPageLoad();
+
+    const settingsButton = page.getByRole('button', { name: 'Abrir panel de atajos y ajustes' });
+    await expect(settingsButton).toBeVisible();
+    await settingsButton.click();
+
+    await expect(page.getByText('Atajos y ajustes')).toBeVisible();
+
+    const hintButton = page.locator('[data-testid="command-hint-button"]');
+    await expect(hintButton).toBeVisible();
+
+    await page.getByRole('switch', { name: 'Mostrar botón flotante Cmd+K' }).click();
+    await expect(hintButton).toHaveCount(0);
+  });
 });

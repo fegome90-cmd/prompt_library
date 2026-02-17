@@ -15,6 +15,7 @@ import {
   CaretDown,
   CaretUp,
   SlidersHorizontal,
+  GearSix,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,9 @@ import { PromptComposer } from '@/components/prompt-manager/prompt-composer';
 import { FloatingSidebar } from '@/components/prompt-manager/floating-sidebar';
 import { StatsDashboard } from '@/components/prompt-manager/stats-dashboard';
 import { PromptEditor } from '@/components/prompt-manager/prompt-editor';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { useStore, useHydrated } from '@/lib/store';
 import { parseTags, CATEGORY_STYLE } from '@/lib/prompt-utils';
 import { cn } from '@/lib/utils';
@@ -89,6 +93,8 @@ export default function PromptManagerPage() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [desktopControlsCollapsed, setDesktopControlsCollapsed] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showCommandHint, setShowCommandHint] = useState(true);
 
   // Keyboard shortcut for command palette (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -260,6 +266,15 @@ export default function PromptManagerPage() {
               <Badge variant="outline" className="hidden lg:flex">
                 {currentUser?.name || 'Usuario'}
               </Badge>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Abrir panel de atajos y ajustes"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <GearSix weight="regular" className="h-4 w-4" />
+              </Button>
               <Button onClick={handleNewPrompt} size="sm">
                 <Plus weight="regular" className="h-4 w-4 mr-1.5" />
                 <span className="hidden sm:inline">Nuevo Prompt</span>
@@ -436,6 +451,53 @@ export default function PromptManagerPage() {
         </SheetContent>
       </Sheet>
 
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle>Atajos y ajustes</SheetTitle>
+            <SheetDescription>Preferencias locales de visualización y accesos rápidos.</SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-4 space-y-4 text-sm">
+            <div className="space-y-2">
+              <p className="font-medium">Atajos</p>
+              <div className="rounded-lg border bg-card/40 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span>Abrir command palette</span>
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Cmd/Ctrl + K</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Ir a Biblioteca</span>
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Cmd + 1</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Ir a Favoritos</span>
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Cmd + 2</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Ir a Estadísticas</span>
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Cmd + 3</kbd>
+                </div>
+              </div>
+            </div>
+            <Separator />
+            <div className="space-y-2">
+              <p className="font-medium">Ajustes de interfaz</p>
+              <div className="rounded-lg border bg-card/40 p-3">
+                <Label htmlFor="toggle-command-hint" className="flex items-center justify-between">
+                  <span>Mostrar botón flotante Cmd+K</span>
+                  <Switch
+                    id="toggle-command-hint"
+                    checked={showCommandHint}
+                    onCheckedChange={setShowCommandHint}
+                    aria-label="Mostrar botón flotante Cmd+K"
+                  />
+                </Label>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Command Palette */}
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
         <CommandInput placeholder="Buscar comandos..." />
@@ -464,6 +526,11 @@ export default function PromptManagerPage() {
               <span>Crear nuevo prompt</span>
               <CommandShortcut>⌘N</CommandShortcut>
             </CommandItem>
+            <CommandItem onSelect={() => { setSettingsOpen(true); setCommandOpen(false); }}>
+              <GearSix weight="regular" className="mr-2 h-4 w-4" />
+              <span>Abrir ajustes</span>
+              <CommandShortcut>⌘,</CommandShortcut>
+            </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Vista">
             <CommandItem onSelect={() => { setViewMode('grid'); setCommandOpen(false); }}>
@@ -479,14 +546,17 @@ export default function PromptManagerPage() {
       </CommandDialog>
 
       {/* Keyboard shortcut hint */}
-      <button
-        onClick={() => setCommandOpen(true)}
-        className="fixed bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-lg border bg-background/95 backdrop-blur text-xs text-muted-foreground hover:bg-accent transition-colors z-50"
-        aria-label="Abrir paleta de comandos"
-      >
-        <Keyboard weight="regular" className="h-4 w-4" />
-        <span className="hidden sm:inline">Cmd+K</span>
-      </button>
+      {showCommandHint && (
+        <button
+          data-testid="command-hint-button"
+          onClick={() => setCommandOpen(true)}
+          className="fixed bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-lg border bg-background/95 backdrop-blur text-xs text-muted-foreground hover:bg-accent transition-colors z-50"
+          aria-label="Abrir paleta de comandos"
+        >
+          <Keyboard weight="regular" className="h-4 w-4" />
+          <span className="hidden sm:inline">Cmd+K</span>
+        </button>
+      )}
 
       {/* Banner de seguridad */}
       <div className="container mx-auto px-4 pt-4">

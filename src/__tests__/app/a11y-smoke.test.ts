@@ -53,5 +53,8 @@ describe('A11y smoke checks', () => {
     expect(appPage).toContain('aria-live="polite"');
     expect(appPage).toContain('data-testid="library-empty-state"');
     expect(appPage).toContain('data-testid="favorites-empty-state"');
+    expect(appPage).toContain('aria-label="Abrir panel de atajos y ajustes"');
+    expect(appPage).toContain('SheetTitle>Atajos y ajustes');
+    expect(appPage).toContain('data-testid="command-hint-button"');
   });
 });
