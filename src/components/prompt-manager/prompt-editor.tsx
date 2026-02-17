@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { autoTag, analyzeComplexity } from '@/lib/auto-tagger';
 import { validatePrompt, getScoreMessage, type ValidationResult } from '@/lib/prompt-validator';
 import { logger } from '@/lib/logger';
+import { trackEvent } from '@/lib/analytics';
 
 interface PromptEditorProps {
   prompt?: Prompt | null;
@@ -176,6 +177,11 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
   
   // Guardar prompt
   const handleSave = async () => {
+    if (!currentUser?.id) {
+      toast.error('Debes iniciar sesión para crear o editar prompts');
+      return;
+    }
+
     if (!title || !body || !category) {
       toast.error('Por favor completa título, cuerpo y categoría');
       return;
@@ -211,8 +217,20 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
         }),
       });
       
-      if (!response.ok) throw new Error('Error al guardar');
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error('Debes iniciar sesión para crear o editar prompts');
+          return;
+        }
+        throw new Error('Error al guardar');
+      }
       
+      if (!prompt) {
+        trackEvent('prompt_created', {
+          category,
+        });
+      }
+
       toast.success(prompt ? 'Prompt actualizado' : 'Prompt creado');
       onSave();
       onOpenChange(false);
@@ -321,6 +339,7 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
                         type="button" 
                         variant="ghost" 
                         size="sm"
+                        aria-label="Cerrar sugerencias de tags"
                         onClick={() => setShowSuggestedTags(false)}
                       >
                         <X weight="regular" className="h-3 w-3" />
@@ -361,7 +380,7 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                     placeholder="Añadir tag..."
                   />
-                  <Button type="button" variant="outline" onClick={addTag}>
+                  <Button type="button" variant="outline" aria-label="Añadir tag" onClick={addTag}>
                     <Plus weight="regular" className="h-4 w-4" />
                   </Button>
                 </div>
@@ -497,6 +516,7 @@ export function PromptEditor({ prompt, open, onOpenChange, onSave }: PromptEdito
                           type="button"
                           variant="ghost"
                           size="sm"
+                          aria-label="Eliminar variable"
                           onClick={() => removeVariable(index)}
                         >
                           <Trash weight="regular" className="h-4 w-4 text-red-500" />

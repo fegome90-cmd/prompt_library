@@ -38,7 +38,11 @@ export async function POST(
     
     // Validar que tenemos un usuario
     if (!user) {
-      return NextResponse.json({ error: 'No hay usuario disponible' }, { status: 500 });
+      return createErrorResponse(
+        new Error('No hay usuario disponible'),
+        'No hay usuario disponible',
+        500
+      );
     }
     
     const finalUserId = user; // Para usar dentro de la transacción

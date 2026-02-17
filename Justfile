@@ -102,6 +102,16 @@ just-lint:
     @echo "✅ Justfile check complete"
 
 # =============================================================================
+# PREMIUM QUALITY AUDIT
+# =============================================================================
+
+# Run Design & Performance audit (Modern AST-based)
+audit:
+    @echo "🚀 Starting Premium Quality Audit (ESLint + Stylelint)..."
+    @bun run lint
+    @bunx stylelint "**/*.css"
+
+# =============================================================================
 # DATABASE OPERATIONS
 # =============================================================================
 

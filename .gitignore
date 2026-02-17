@@ -56,5 +56,9 @@ test-results/
 playwright-report/
 artifacts/
 
+# Prisma
+*.db
+*.db-journal
+
 # Screenshots
 .screenshots/

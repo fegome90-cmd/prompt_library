@@ -39,9 +39,10 @@ export async function POST(
     // WO-0003: Validar que reviewer existe antes de continuar
     if (!reviewer) {
       logger.error('[WO-0003] No hay usuario disponible para auditar la publicación');
-      return NextResponse.json(
-        { error: 'No hay usuario disponible para auditar la publicación' },
-        { status: 500 }
+      return createErrorResponse(
+        new Error('No hay usuario disponible para auditar la publicación'),
+        'No hay usuario disponible para auditar la publicación',
+        500
       );
     }
 
@@ -52,9 +53,10 @@ export async function POST(
 
     if (!reviewerExists) {
       logger.error(`[WO-0003] El reviewer ${reviewer} no existe en la base de datos`);
-      return NextResponse.json(
-        { error: 'El usuario revisor no existe' },
-        { status: 500 }
+      return createErrorResponse(
+        new Error('El usuario revisor no existe'),
+        'El usuario revisor no existe',
+        500
       );
     }
     

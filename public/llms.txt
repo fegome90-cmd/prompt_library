@@ -1,0 +1,188 @@
+# Prompt Library
+
+> Sistema de gestión de prompts de IA con autenticación, versionado y feedback.
+
+Una solución moderna para centralizar, iterar y gobernar los prompts de IA en entornos corporativos.
+
+## ¿Qué es Prompt Library?
+
+Prompt Library es una aplicación web que permite a los equipos gestionar sus prompts de IA de forma centralizada. Ofrece:
+
+- **Editor de prompts**: Soporte para variables `{nombre}`, Markdown y previsualización
+- **Versionado**: Historial completo de cambios por prompt
+- **Gobernanza**: Sistema de roles (Admin/User), audit logs y filtros de seguridad
+- **Feedback**: Métricas de uso, sistema de thumbs up/down y comentarios
+
+## Stack Tecnológico
+
+- **Framework**: Next.js 16 (App Router)
+- **Runtime**: Bun
+- **Lenguaje**: TypeScript 5
+- **Estilos**: Tailwind CSS 4 & shadcn/ui
+- **Base de Datos**: Prisma ORM (SQLite en dev, PostgreSQL en prod)
+- **Autenticación**: NextAuth.js
+- **Testing**: Vitest & Playwright
+
+## API Endpoints
+
+### Prompts
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/prompts` | GET | Lista prompts (paginado, filtrado) |
+| `/api/prompts` | POST | Crea nuevo prompt |
+| `/api/prompts/[id]` | GET | Obtiene prompt por ID |
+| `/api/prompts/[id]` | PUT | Actualiza prompt |
+| `/api/prompts/[id]` | DELETE | Elimina prompt (soft delete) |
+| `/api/prompts/[id]/publish` | POST | Publica un prompt draft |
+| `/api/prompts/[id]/deprecate` | POST | Deprecate un prompt |
+| `/api/prompts/[id]/feedback` | POST | Registra feedback de uso |
+| `/api/prompts/[id]/versions` | GET | Historial de versiones |
+
+### Categorías
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/categories` | GET | Lista todas las categorías |
+| `/api/categories` | POST | Crea nueva categoría |
+
+### Autenticación
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/auth/signup` | POST | Registro de usuario |
+| `/api/auth/[...nextauth]` | - | NextAuth.js handlers |
+
+### Utilidades
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/stats` | GET | Estadísticas del sistema |
+| `/api/health` | GET | Health check |
+| `/api/seed` | POST | Seed de datos iniciales |
+
+## Modelos de Datos
+
+### Prompt
+
+```
+Prompt:
+  - id: string (UUID)
+  - title: string (unique)
+  - description: string
+  - body: string (contenido del prompt con variables {var})
+  - categoryId: string
+  - tags: string[]
+  - variablesSchema: JSON Schema de variables
+  - outputFormat: string?
+  - status: "draft" | "published" | "deprecated"
+  - riskLevel: "low" | "medium" | "high"
+  - version: string (semver)
+  - useCount, thumbsUp, thumbsDown: int
+  - isFavorite: boolean
+  - timestamps: createdAt, updatedAt, publishedAt, deprecatedAt
+```
+
+### Category
+
+```
+Category:
+  - id: string
+  - name: string (unique)
+  - description: string?
+  - color: string?
+  - icon: string?
+  - order: int
+```
+
+### User
+
+```
+User:
+  - id: string
+  - email: string (unique)
+  - name: string
+  - role: "user" | "admin"
+```
+
+## Variables en Prompts
+
+Los prompts soportan variables usando la sintaxis `{nombreVariable}`:
+
+```markdown
+# Ejemplo de prompt
+
+Hola {nombre}, tu pedido #{pedidoId} está listo.
+
+Detalles:
+- Producto: {producto}
+- Precio: {precio}
+```
+
+El `variablesSchema` define la validación:
+
+```json
+[
+  {"name": "nombre", "type": "string", "required": true},
+  {"name": "pedidoId", "type": "string", "required": true},
+  {"name": "producto", "type": "string", "required": true},
+  {"name": "precio", "type": "number", "required": false}
+]
+```
+
+## Autenticación y Autorización
+
+- **Autenticación**: NextAuth.js con credentials provider
+- **Autorización**: Basada en roles (`user`, `admin`)
+- **Protección**: Rate limiting en endpoints críticos
+- **Dev Mode**: `getUserWithDevFallback()` para desarrollo
+
+## Comandos de Desarrollo
+
+```bash
+bun install          # Instalar dependencias
+bun run dev          # Servidor de desarrollo (puerto 3000)
+bun run lint         # ESLint + TypeCheck
+bun run test:run     # Tests unitarios (Vitest)
+bun run test:e2e     # Tests E2E (Playwright)
+bun run build        # Build de producción
+bun run db:push      # Sincronizar schema con DB
+bun run db:generate  # Generar cliente Prisma
+```
+
+## Estructura del Proyecto
+
+```
+src/
+├── app/
+│   ├── api/           # REST endpoints
+│   ├── app/           # Páginas autenticadas
+│   └── page.tsx       # Landing page
+├── components/
+│   ├── ui/            # shadcn/ui components
+│   └── domain/        # Componentes de dominio
+├── lib/
+│   ├── db.ts          # Prisma singleton
+│   ├── auth.ts        # NextAuth config
+│   ├── validators/    # Esquemas Zod
+│   └── rate-limit.ts  # Rate limiting
+├── services/          # Lógica de servicios
+├── types/             # Tipos globales
+└── __tests__/         # Tests (mirror de src/)
+```
+
+## Archivos de Documentación
+
+- [CLAUDE.md](/CLAUDE.md) - Instrucciones para Claude Code
+- [README.md](/README.md) - Documentación general del proyecto
+- [prisma/schema.prisma](/prisma/schema.prisma) - Esquema de base de datos completo
+- [WORK-ORDERS.yaml](/WORK-ORDERS.yaml) - Órdenes de trabajo y progreso
+
+## Endpoints de Salud
+
+- `/api/health` - Verifica que la aplicación está corriendo
+- `/api/stats` - Estadísticas del sistema (prompts, usuarios, etc.)
+
+---
+
+Documentación generada para LLMs. Última actualización: 2025-02.

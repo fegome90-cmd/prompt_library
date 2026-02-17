@@ -132,6 +132,17 @@ export async function POST(request: NextRequest) {
     // SECURITY: Get authenticated user (with dev fallback in development)
     const currentUser = await getUserWithDevFallback();
 
+    // TEMPORARY DIAGNOSTICS (WO-0016): Log auth state for debugging
+    // TODO: Remove this after debugging WO-0016
+    if (process.env.NODE_ENV === 'development') {
+      logger.info('[WO-0016] Auth diagnostics', {
+        hasUser: !!currentUser,
+        userId: currentUser?.id,
+        nodeEnv: process.env.NODE_ENV,
+        hasDevBypass: process.env.DEV_AUTH_BYPASS === 'true',
+      });
+    }
+
     if (!currentUser) {
       logger.warn('[SECURITY] No hay usuario autenticado para operación POST');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });

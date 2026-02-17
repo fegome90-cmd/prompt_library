@@ -8,13 +8,27 @@ import {
   MagnifyingGlass,
   ArrowRight,
   Check,
-  Terminal,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import { trackEvent } from '@/lib/analytics';
 
 export default function LandingPage() {
+  const handleLandingCtaClick = (location: string) => {
+    trackEvent('landing_cta_click', {
+      location,
+      cta_text: 'Comenzar gratis',
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-white focus:text-black"
+      >
+        Saltar al contenido principal
+      </a>
+
       {/* Grid Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 opacity-[0.03] landing-grid" />
@@ -22,7 +36,7 @@ export default function LandingPage() {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-white/[0.06]">
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-md">
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -32,6 +46,7 @@ export default function LandingPage() {
                   alt="Prompt Manager"
                   width={32}
                   height={32}
+                  suppressHydrationWarning
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -43,7 +58,7 @@ export default function LandingPage() {
                 href="/app"
                 className="text-sm text-white/60 hover:text-white transition-colors duration-150"
               >
-                Documentación
+                Funciones
               </Link>
               <Link
                 href="/app"
@@ -58,19 +73,22 @@ export default function LandingPage() {
                 Iniciar sesión
               </Link>
               <Button size="sm" className="bg-[#8b5cf6] hover:bg-[#7c3aed]" asChild>
-                <Link href="/app">Comenzar gratis</Link>
+                <Link href="/app" onClick={() => handleLandingCtaClick('header')}>
+                  Comenzar gratis
+                </Link>
               </Button>
             </div>
           </nav>
         </div>
       </header>
 
+      <main id="main-content">
       {/* Hero */}
       <section className="relative z-10">
         <div className="container mx-auto px-4 pt-24 pb-16">
           <div className="max-w-3xl">
             {/* Tag */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02] mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.08] bg-white/[0.02] mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
               <span className="text-xs text-white/50 font-mono">v2.0 estable</span>
             </div>
@@ -91,7 +109,7 @@ export default function LandingPage() {
             {/* CTAs */}
             <div className="flex items-center gap-3">
               <Button size="lg" className="bg-[#8b5cf6] hover:bg-[#7c3aed] gap-2" asChild>
-                <Link href="/app">
+                <Link href="/app" onClick={() => handleLandingCtaClick('hero')}>
                   Comenzar gratis
                   <ArrowRight weight="regular" className="h-4 w-4" />
                 </Link>
@@ -108,16 +126,7 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Trust signals */}
-            <div className="mt-12 pt-8 border-t border-white/[0.06]">
-              <p className="text-xs text-white/30 mb-4">USADO POR EQUIPOS EN</p>
-              <div className="flex items-center gap-8 opacity-40">
-                <span className="text-sm font-medium text-white/60">Vercel</span>
-                <span className="text-sm font-medium text-white/60">Linear</span>
-                <span className="text-sm font-medium text-white/60">Stripe</span>
-                <span className="text-sm font-medium text-white/60">Supabase</span>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>
@@ -134,7 +143,7 @@ export default function LandingPage() {
                 <div className="h-3 w-3 rounded-full bg-[#28c840]" />
               </div>
               <div className="flex-1 flex justify-center">
-                <div className="px-4 py-1 rounded-md bg-white/[0.05] text-xs text-white/40 font-mono">
+                <div className="px-4 py-2 rounded-md bg-white/[0.05] text-xs text-white/40 font-mono">
                   prompt-manager.app
                 </div>
               </div>
@@ -142,23 +151,24 @@ export default function LandingPage() {
             </div>
 
             {/* App preview */}
-            <div className="aspect-[16/9] bg-gradient-to-br from-[#111113] via-[#0f0f11] to-[#0a0a0b] flex items-center justify-center">
-              <div className="text-center">
-                <Terminal weight="regular" className="h-16 w-16 text-white/15 mx-auto mb-4" />
-                <p className="text-white/30 text-sm font-mono tracking-wide">
-                  Vista previa del dashboard
-                </p>
-                <p className="text-white/20 text-xs font-mono mt-2">
-                  Haz clic en &quot;Comenzar gratis&quot; para verlo
-                </p>
-              </div>
+            <div className="aspect-[16/9] bg-gradient-to-br from-[#111113] via-[#0f0f11] to-[#0a0a0b] flex items-center justify-center overflow-hidden">
+              <Image
+                src="/landing/landing-hero.png"
+                alt="Prompt Manager Dashboard"
+                width={1200}
+                height={675}
+                suppressHydrationWarning
+                className="w-full h-full object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="relative z-10 py-24">
+      <section id="features" className="relative z-10 py-24 scroll-mt-24">
         <div className="container mx-auto px-4">
           {/* Section header */}
           <div className="max-w-xl mb-16">
@@ -248,7 +258,7 @@ export default function LandingPage() {
 
             <div className="rounded-xl border border-white/[0.08] bg-[#111113] overflow-hidden">
               {/* File header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-[#0a0a0b]">
+              <div className="flex items-center gap-2 px-4 py-4 border-b border-white/[0.06] bg-[#0a0a0b]">
                 <div className="flex gap-2">
                   <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
                   <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
@@ -329,7 +339,7 @@ export default function LandingPage() {
             Solo crea una cuenta y empieza a organizar tus prompts.
           </p>
           <Button size="lg" className="bg-[#8b5cf6] hover:bg-[#7c3aed] gap-2" asChild>
-            <Link href="/app">
+            <Link href="/app" onClick={() => handleLandingCtaClick('footer')}>
               Comenzar gratis
               <ArrowRight weight="regular" className="h-4 w-4" />
             </Link>
@@ -348,6 +358,7 @@ export default function LandingPage() {
                   alt="Prompt Manager"
                   width={24}
                   height={24}
+                  suppressHydrationWarning
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -355,15 +366,15 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-6 text-sm text-white/40">
-              <Link href="/app" className="hover:text-white transition-colors">
+              <a href="#features" className="hover:text-white transition-colors">
                 Documentación
-              </Link>
-              <Link href="/app" className="hover:text-white transition-colors">
+              </a>
+              <span className="text-white/40">
                 Privacidad
-              </Link>
-              <Link href="/app" className="hover:text-white transition-colors">
+              </span>
+              <span className="text-white/40">
                 Términos
-              </Link>
+              </span>
             </div>
 
             <p className="text-xs text-white/30">
@@ -372,6 +383,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      </main>
     </div>
   );
 }

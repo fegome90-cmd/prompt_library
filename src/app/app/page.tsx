@@ -11,11 +11,21 @@ import {
   List,
   WarningCircle,
   ArrowClockwise,
+  Keyboard,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+} from '@/components/ui/command';
 import { logger } from '@/lib/logger';
 import {
   Select,
@@ -34,6 +44,7 @@ import { parseTags, CATEGORY_STYLE } from '@/lib/prompt-utils';
 import { cn } from '@/lib/utils';
 import type { Prompt } from '@/types';
 import { toast } from 'sonner';
+import { trackEvent } from '@/lib/analytics';
 
 export default function PromptManagerPage() {
   const {
@@ -63,11 +74,27 @@ export default function PromptManagerPage() {
   const isHydrated = useHydrated();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  // Keyboard shortcut for command palette (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Inicializar una sola vez después de la hidratación
   useEffect(() => {
     if (isHydrated) {
       initialize();
+      trackEvent('app_opened', {
+        referrer: typeof document !== 'undefined' ? document.referrer || 'direct' : 'direct',
+      });
     }
   }, [isHydrated, initialize]);
 
@@ -94,8 +121,7 @@ export default function PromptManagerPage() {
 
   // Guardar prompt
   const handleSavePrompt = async () => {
-    await fetchPrompts();
-    await fetchStats();
+    await Promise.all([fetchPrompts(), fetchStats()]);
   };
 
   // Publicar prompt
@@ -110,8 +136,7 @@ export default function PromptManagerPage() {
       if (!res.ok) throw new Error('Error al publicar');
 
       toast.success('Prompt publicado correctamente');
-      await fetchPrompts();
-      await fetchStats();
+      await Promise.all([fetchPrompts(), fetchStats()]);
     } catch (error) {
       logger.error('Error publishing prompt', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Error al publicar');
@@ -161,36 +186,110 @@ export default function PromptManagerPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-background focus:text-foreground focus:border"
+      >
+        Saltar al contenido principal
+      </a>
+
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Books weight="regular" className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold">Prompt Manager</h1>
-                  <p className="text-xs text-muted-foreground">
-                    Biblioteca / {getTabLabel(activeTab)} • {prompts.length} prompts
-                  </p>
-                </div>
+          <div className="flex items-center justify-between gap-4">
+            {/* Branding */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+                <Books weight="regular" className="h-5 w-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold truncate">Prompt Manager</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Biblioteca / {getTabLabel(activeTab)} • {prompts.length} prompts
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="hidden sm:flex">
+            {/* Quick search */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  data-testid="header-search"
+                  placeholder="Buscar prompts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-muted/50"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge variant="outline" className="hidden lg:flex">
                 {currentUser?.name || 'Usuario'}
               </Badge>
-              <Button onClick={handleNewPrompt}>
-                <Plus weight="regular" className="h-4 w-4 mr-2" />
-                Nuevo Prompt
+              <Button onClick={handleNewPrompt} size="sm">
+                <Plus weight="regular" className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Nuevo Prompt</span>
+                <span className="sm:hidden">Nuevo</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Command Palette */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Buscar comandos..." />
+        <CommandList>
+          <CommandEmpty>No se encontró ningún comando.</CommandEmpty>
+          <CommandGroup heading="Navegación">
+            <CommandItem onSelect={() => { setActiveTab('library'); setCommandOpen(false); }}>
+              <Books weight="regular" className="mr-2 h-4 w-4" />
+              <span>Ir a Biblioteca</span>
+              <CommandShortcut>⌘1</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => { setActiveTab('favorites'); setCommandOpen(false); }}>
+              <Star weight="regular" className="mr-2 h-4 w-4" />
+              <span>Ir a Favoritos</span>
+              <CommandShortcut>⌘2</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => { setActiveTab('stats'); setCommandOpen(false); }}>
+              <ChartBar weight="regular" className="mr-2 h-4 w-4" />
+              <span>Ir a Estadísticas</span>
+              <CommandShortcut>⌘3</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Acciones">
+            <CommandItem onSelect={() => { handleNewPrompt(); setCommandOpen(false); }}>
+              <Plus weight="regular" className="mr-2 h-4 w-4" />
+              <span>Crear nuevo prompt</span>
+              <CommandShortcut>⌘N</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Vista">
+            <CommandItem onSelect={() => { setViewMode('grid'); setCommandOpen(false); }}>
+              <GridFour weight="regular" className="mr-2 h-4 w-4" />
+              <span>Vista de cuadrícula</span>
+            </CommandItem>
+            <CommandItem onSelect={() => { setViewMode('list'); setCommandOpen(false); }}>
+              <List weight="regular" className="mr-2 h-4 w-4" />
+              <span>Vista de lista</span>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+
+      {/* Keyboard shortcut hint */}
+      <button
+        onClick={() => setCommandOpen(true)}
+        className="fixed bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-lg border bg-background/95 backdrop-blur text-xs text-muted-foreground hover:bg-accent transition-colors z-50"
+        aria-label="Abrir paleta de comandos"
+      >
+        <Keyboard weight="regular" className="h-4 w-4" />
+        <span className="hidden sm:inline">Cmd+K</span>
+      </button>
 
       {/* Banner de seguridad */}
       <div className="container mx-auto px-4 pt-4">
@@ -219,7 +318,7 @@ export default function PromptManagerPage() {
       )}
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-4 flex-1">
+      <main id="main-content" className="container mx-auto px-4 py-4 flex-1">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <TabsList>
@@ -239,7 +338,7 @@ export default function PromptManagerPage() {
 
             {activeTab !== 'stats' && (
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
+                <div className="relative flex-1 sm:w-64 md:hidden">
                   <MagnifyingGlass weight="regular" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     data-testid="search-input"
@@ -330,16 +429,22 @@ export default function PromptManagerPage() {
                 )}
 
                 {filteredPrompts.length === 0 && (
-                  <div className="text-center py-12">
-                    <Books weight="regular" className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-medium">No se encontraron prompts</h3>
-                    <p className="text-muted-foreground mt-1">
-                      {searchQuery ? 'Intenta con otra búsqueda' : 'Crea tu primer prompt para comenzar'}
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Books weight="regular" className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No se encontraron prompts</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                      {searchQuery 
+                        ? 'No hay resultados para tu búsqueda. Prueba con otros términos.'
+                        : 'Aún no tienes prompts. Crea tu primer prompt para comenzar a construir tu biblioteca.'}
                     </p>
-                    <Button className="mt-4" onClick={handleNewPrompt}>
-                      <Plus weight="regular" className="h-4 w-4 mr-2" />
-                      Crear Prompt
-                    </Button>
+                    {!searchQuery && (
+                      <Button onClick={handleNewPrompt}>
+                        <Plus weight="regular" className="h-4 w-4 mr-2" />
+                        Crear tu primer prompt
+                      </Button>
+                    )}
                   </div>
                 )}
               </>
@@ -363,12 +468,17 @@ export default function PromptManagerPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Star weight="regular" className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-medium">No tienes favoritos</h3>
-                    <p className="text-muted-foreground mt-1">
-                      Marca prompts como favoritos para acceder rápidamente
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Star weight="regular" className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No tienes favoritos</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                      Marca prompts como favoritos para acceder rápidamente desde aquí.
                     </p>
+                    <Button variant="outline" onClick={() => setActiveTab('library')}>
+                      Explorar biblioteca
+                    </Button>
                   </div>
                 )}
               </>
@@ -469,7 +579,7 @@ function PromptCard({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {tags.slice(0, 3).map(tag => (
-              <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
+              <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
                 {tag}
               </Badge>
             ))}
@@ -499,23 +609,36 @@ function PromptCard({
         </div>
       </div>
 
-      <div className="border-t bg-muted/30 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {onPublish && prompt.status === 'draft' && (
+      <div className="border-t bg-muted/30 px-3 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono tabular-nums">
+          <span>{prompt.useCount} usos</span>
+          {rating !== null && (
+            <>
+              <span>•</span>
+              <span className="text-success">{rating}% útil</span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {onPublish && prompt.status === 'draft' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={(e) => { e.stopPropagation(); onPublish(); }}
+            >
+              Publicar
+            </Button>
+          )}
           <Button
-            variant="ghost"
+            variant="default"
             size="sm"
-            onClick={(e) => { e.stopPropagation(); onPublish(); }}
+            className="h-7 text-xs"
+            onClick={(e) => { e.stopPropagation(); onSelect(); }}
           >
-            Publicar
+            Usar
           </Button>
-        )}
-        <Button
-          variant="default"
-          size="sm"
-          onClick={(e) => { e.stopPropagation(); onSelect(); }}
-        >
-          Usar
-        </Button>
+        </div>
       </div>
     </div>
   );
