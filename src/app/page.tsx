@@ -55,14 +55,14 @@ export default function LandingPage() {
 
             <div className="flex items-center gap-6">
               <Link
-                href="/app"
-                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+                href="#features"
+                className="hidden md:inline text-sm text-white/60 hover:text-white transition-colors duration-150"
               >
                 Funciones
               </Link>
               <Link
-                href="/app"
-                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+                href="#pricing"
+                className="hidden md:inline text-sm text-white/60 hover:text-white transition-colors duration-150"
               >
                 Precios
               </Link>
@@ -329,6 +329,63 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
+      <section id="pricing" className="relative z-10 py-24 border-t border-white/[0.06] scroll-mt-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-xl mb-12">
+            <h2 className="text-3xl font-semibold tracking-tight mb-4">
+              Precios simples para equipos reales.
+            </h2>
+            <p className="text-white/50">
+              Empieza gratis y escala cuando tu biblioteca de prompts crezca.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <PricingCard
+              name="Starter"
+              price="Gratis"
+              description="Para uso personal y equipos pequeños."
+              bullets={[
+                'Hasta 50 prompts',
+                'Versionado básico',
+                'Búsqueda y favoritos',
+              ]}
+              ctaLabel="Empezar"
+              ctaHref="/app"
+              onCtaClick={() => handleLandingCtaClick('pricing-starter')}
+            />
+            <PricingCard
+              name="Pro"
+              price="$19"
+              description="Para equipos que iteran prompts de forma continua."
+              bullets={[
+                'Prompts ilimitados',
+                'Analítica avanzada',
+                'Detección PII en tiempo real',
+              ]}
+              ctaLabel="Probar Pro"
+              ctaHref="/app"
+              featured
+              onCtaClick={() => handleLandingCtaClick('pricing-pro')}
+            />
+            <PricingCard
+              name="Enterprise"
+              price="Custom"
+              description="Para organizaciones con compliance y soporte dedicado."
+              bullets={[
+                'SSO y controles de acceso',
+                'Auditoría y exportaciones',
+                'Soporte prioritario',
+              ]}
+              ctaLabel="Contactar ventas"
+              ctaHref="/app"
+              onCtaClick={() => handleLandingCtaClick('pricing-enterprise')}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
       <section className="relative z-10 py-24 border-t border-white/[0.06]">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-semibold tracking-tight mb-4">
@@ -440,6 +497,57 @@ function CheckItem({ text }: { readonly text: string }) {
         <Check weight="regular" className="h-3 w-3 text-[#8b5cf6]" />
       </div>
       <span className="text-sm text-white/70">{text}</span>
+    </div>
+  );
+}
+
+function PricingCard({
+  name,
+  price,
+  description,
+  bullets,
+  ctaLabel,
+  ctaHref,
+  onCtaClick,
+  featured = false,
+}: {
+  readonly name: string;
+  readonly price: string;
+  readonly description: string;
+  readonly bullets: string[];
+  readonly ctaLabel: string;
+  readonly ctaHref: string;
+  readonly onCtaClick: () => void;
+  readonly featured?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-6 ${
+        featured
+          ? 'border-[#8b5cf6]/50 bg-[#8b5cf6]/10 shadow-[0_16px_42px_rgba(139,92,246,0.18)]'
+          : 'border-white/[0.08] bg-[#111113]'
+      }`}
+    >
+      <p className="text-sm text-white/60 mb-2">{name}</p>
+      <p className="text-3xl font-semibold tracking-tight mb-2">{price}</p>
+      <p className="text-sm text-white/50 mb-5">{description}</p>
+      <ul className="space-y-2 mb-6">
+        {bullets.map((bullet) => (
+          <li key={bullet} className="text-sm text-white/70 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
+            {bullet}
+          </li>
+        ))}
+      </ul>
+      <Button
+        className={featured ? 'w-full bg-[#8b5cf6] hover:bg-[#7c3aed]' : 'w-full'}
+        variant={featured ? 'default' : 'outline'}
+        asChild
+      >
+        <Link href={ctaHref} onClick={onCtaClick}>
+          {ctaLabel}
+        </Link>
+      </Button>
     </div>
   );
 }
