@@ -21,6 +21,8 @@ import {
   getUserWithDevFallback,
   canModifyPrompt,
   canDeletePrompt,
+  getCurrentUser,
+  hasRole,
 } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
@@ -44,32 +46,41 @@ function incrementVersion(version: string): string {
   return `${major}.${minor}`;
 }
 
-// GET - Obtener un prompt específico
+// GET - Public prompts are readable anonymously. Drafts/reviews are private.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-
+    const viewer = await getCurrentUser();
     const prompt = await db.prompt.findUnique({
       where: { id },
       include: {
         User_Prompt_authorIdToUser: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
         User_Prompt_reviewerIdToUser: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
-        PromptVersion: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
+        // Historical versions are available only through the authorized versions API.
       },
     });
 
-    if (!prompt) {
+    if (!prompt || prompt.deletedAt !== null) {
       return NextResponse.json({ error: 'Prompt no encontrado' }, { status: 404 });
+    }
+
+    if (prompt.status !== 'published') {
+      const canSeePrivate =
+        viewer !== null &&
+        (hasRole(viewer, ['owner', 'editor']) ||
+          viewer.id === prompt.authorId ||
+          viewer.id === prompt.reviewerId);
+
+      if (!canSeePrivate) {
+        return NextResponse.json({ error: 'Prompt no encontrado' }, { status: 404 });
+      }
     }
 
     return NextResponse.json(prompt);
@@ -124,7 +135,7 @@ export async function PUT(
     }
 
     // SECURITY: Validación de permisos con roles
-    if (!canModifyPrompt(currentUser, existingPrompt.authorId)) {
+    if (!canModifyPrompt(currentUser, existingPrompt.authorId, existingPrompt.reviewerId)) {
       logger.warn(
         `[SECURITY] Usuario ${currentUser.id} (${currentUser.role}) intentó modificar prompt de otro usuario`
       );
