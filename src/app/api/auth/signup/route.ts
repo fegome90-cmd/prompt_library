@@ -13,13 +13,14 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { applyRateLimit } from '@/services/rate-limit.service';
 
 // Validation schema
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(12, 'Password must be at least 12 characters')
     .max(100, 'Password too long'),
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
 });
@@ -28,6 +29,14 @@ const signupSchema = z.object({
 const SALT_ROUNDS = 12;
 
 export async function POST(request: NextRequest) {
+  // Private deployments must not permit self-registration by default.
+  if (process.env.ENABLE_PUBLIC_SIGNUP !== 'true') {
+    return NextResponse.json({ error: 'Registro deshabilitado' }, { status: 403 });
+  }
+
+  const rateLimitError = applyRateLimit(request, 'strict');
+  if (rateLimitError) return rateLimitError;
+
   try {
     const body = await request.json();
 
