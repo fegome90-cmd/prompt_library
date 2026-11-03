@@ -10,7 +10,10 @@ const SALT_ROUNDS = 12;
 async function main() {
   console.log('🌱 Iniciando semilla...');
 
-  // Require explicit local seed credentials; no shared default password.
+  // Require explicit seed credentials; never ship a shared default password.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+    throw new Error('Production seeding requires explicit ALLOW_PRODUCTION_SEED=true.');
+  }
   const seedAdminEmail = process.env.SEED_ADMIN_EMAIL;
   const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
   if (!seedAdminEmail || !seedAdminPassword || seedAdminPassword.length < 16) {
@@ -20,7 +23,7 @@ async function main() {
   
   const user = await prisma.user.upsert({
     where: { email: seedAdminEmail },
-    update: {},
+    update: { password: hashedPassword },
     create: {
       id: randomUUID(),
       email: seedAdminEmail,
@@ -30,7 +33,7 @@ async function main() {
       updatedAt: new Date(),
     },
   });
-  console.log('✅ Usuario creado:', user.email);
+  console.log('✅ Usuario administrador inicializado');
 
   // Crear categorías
   const categories = [
