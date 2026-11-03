@@ -10,23 +10,30 @@ const SALT_ROUNDS = 12;
 async function main() {
   console.log('🌱 Iniciando semilla...');
 
-  // Create default admin user with password
-  const hashedPassword = await bcrypt.hash('Admin123!', SALT_ROUNDS);
+  // Require explicit seed credentials; never ship a shared default password.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+    throw new Error('Production seeding requires explicit ALLOW_PRODUCTION_SEED=true.');
+  }
+  const seedAdminEmail = process.env.SEED_ADMIN_EMAIL;
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!seedAdminEmail || !seedAdminPassword || seedAdminPassword.length < 16) {
+    throw new Error('Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (16+ characters) before seeding.');
+  }
+  const hashedPassword = await bcrypt.hash(seedAdminPassword, SALT_ROUNDS);
   
   const user = await prisma.user.upsert({
-    where: { email: 'admin@empresa.com' },
-    update: {},
+    where: { email: seedAdminEmail },
+    update: { password: hashedPassword },
     create: {
       id: randomUUID(),
-      email: 'admin@empresa.com',
+      email: seedAdminEmail,
       name: 'Administrador',
       role: 'owner',
       password: hashedPassword,
       updatedAt: new Date(),
     },
   });
-  console.log('✅ Usuario creado:', user.email);
-  console.log('   Password: Admin123! (cambiar en producción)');
+  console.log('✅ Usuario administrador inicializado');
 
   // Crear categorías
   const categories = [

@@ -118,6 +118,13 @@ src/
 
 ---
 
+## Seguridad y despliegue
+
+- Genera `NEXTAUTH_SECRET` con `openssl rand -base64 32` y configúralo como secreto del entorno antes de desplegar.
+- El endpoint HTTP `/api/seed` fue retirado. Inicializa datos exclusivamente mediante el script local `bun run scripts/seed.ts` con `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` definidos fuera de Git.
+- El registro público está desactivado de forma predeterminada. Para habilitarlo de manera explícita, define `ENABLE_PUBLIC_SIGNUP=true` y configura protección antiabuso en la infraestructura.
+- Nunca agregues archivos SQLite, secretos o credenciales al repositorio. Para revisión técnica y acciones operativas pendientes, consulta [remediación de seguridad](./docs/security/2026-11-03-remediation.md).
+
 ## Licencia y procedencia
 
 El código y la documentación originales de este proyecto se distribuyen bajo la [licencia MIT](./LICENSE), exclusivamente en la medida en que sus titulares puedan licenciarlos. El repositorio incluye componentes de terceros y recursos cuya licencia debe revisarse por separado; consulta [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

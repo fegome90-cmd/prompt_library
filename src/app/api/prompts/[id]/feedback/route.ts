@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createErrorResponse } from '@/lib/api-utils';
 import { AuditService } from '@/services/audit.service';
+import { getCurrentUser, hasRole } from '@/lib/auth-utils';
+import { applyRateLimit } from '@/services/rate-limit.service';
+import { feedbackSchema } from '@/lib/validators/prompt';
 
 /**
  * POST - Registrar uso y feedback de un prompt
@@ -14,10 +17,27 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimitError = applyRateLimit(request, 'standard');
+  if (rateLimitError) return rateLimitError;
+
   try {
+    const actor = await getCurrentUser();
+    if (!actor) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id } = await params;
-    const body = await request.json();
-    const { feedback, comment, dataRiskLevel, variablesUsed, userId } = body;
+    const rawBody = await request.json();
+    if (rawBody && typeof rawBody === 'object' && 'userId' in rawBody) {
+      return NextResponse.json({ error: 'userId must come from the session' }, { status: 400 });
+    }
+    const parsed = feedbackSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+    }
+    const { feedback, comment, dataRiskLevel, variablesUsed } = parsed.data;
+    // Record names of variables, not their values (which may contain personal data).
+    const safeVariableSummary = JSON.stringify({ names: Object.keys(variablesUsed ?? {}) });
     
     const existingPrompt = await db.prompt.findUnique({
       where: { id },
@@ -27,26 +47,8 @@ export async function POST(
       return NextResponse.json({ error: 'Prompt no encontrado' }, { status: 404 });
     }
     
-    // Obtener usuario por defecto si no se proporciona
-    let user = userId;
-    if (!user) {
-      const defaultUser = await db.user.findFirst();
-      if (defaultUser) {
-        user = defaultUser.id;
-      }
-    }
-    
-    // Validar que tenemos un usuario
-    if (!user) {
-      return createErrorResponse(
-        new Error('No hay usuario disponible'),
-        'No hay usuario disponible',
-        500
-      );
-    }
-    
-    const finalUserId = user; // Para usar dentro de la transacción
-    
+    const finalUserId = actor.id;
+
     // SECURITY: Verificar si el usuario ya dio feedback para este prompt
     const existingFeedback = await db.promptUsage.findFirst({
       where: {
@@ -68,7 +70,7 @@ export async function POST(
             feedback,
             comment: comment?.substring(0, 200),
             dataRiskLevel,
-            variablesUsed: JSON.stringify(variablesUsed || {}),
+            variablesUsed: safeVariableSummary,
           },
         });
         
@@ -118,7 +120,7 @@ export async function POST(
           feedback,
           comment: comment?.substring(0, 200), // Máximo 200 caracteres
           dataRiskLevel,
-          variablesUsed: JSON.stringify(variablesUsed || {}),
+          variablesUsed: safeVariableSummary,
         },
       });
       
@@ -155,25 +157,28 @@ export async function POST(
   }
 }
 
-// GET - Obtener historial de uso y feedback
+// GET - Usage history is private: users see their own records, owners/editors see all.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const actor = await getCurrentUser();
+    if (!actor) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id } = await params;
-    
+    const isPrivileged = hasRole(actor, ['owner', 'editor']);
     const usageEvents = await db.promptUsage.findMany({
-      where: { promptId: id },
+      where: {
+        promptId: id,
+        ...(isPrivileged ? {} : { userId: actor.id }),
+      },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      include: {
-        User: {
-          select: { id: true, name: true, email: true },
-        },
-      },
+      // Avoid exposing other users' emails or credentials.
     });
-    
     return NextResponse.json(usageEvents);
   } catch (error) {
     return createErrorResponse(error, 'Error al obtener historial');

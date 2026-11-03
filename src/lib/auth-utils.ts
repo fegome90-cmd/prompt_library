@@ -97,7 +97,7 @@ export function hasRole(user: AuthUser | null, roles: string[]): boolean {
  * Rules:
  * - owner: can modify all prompts
  * - editor: can modify all prompts
- * - reviewer: can modify prompts assigned to them
+ * - reviewer: can modify assigned prompts (or their own)
  * - user: can only modify their own prompts
  *
  * @param user - The user to check
@@ -106,7 +106,8 @@ export function hasRole(user: AuthUser | null, roles: string[]): boolean {
  */
 export function canModifyPrompt(
   user: AuthUser | null,
-  promptAuthorId: string
+  promptAuthorId: string,
+  promptReviewerId?: string | null
 ): boolean {
   if (!user) return false;
 
@@ -115,10 +116,9 @@ export function canModifyPrompt(
     return true;
   }
 
-  // Reviewer can modify (in real app, would check assignment)
-  // For now, reviewers can modify any prompt
+  // Reviewers must be explicitly assigned, or own the prompt.
   if (user.role === 'reviewer') {
-    return true;
+    return user.id === promptReviewerId || user.id === promptAuthorId;
   }
 
   // User can only modify their own prompts
@@ -146,16 +146,16 @@ export function canDeletePrompt(user: AuthUser | null): boolean {
  * Development-only: Get default user for development
  *
  * SECURITY REQUIREMENTS:
- * 1. NODE_ENV must NOT be 'production'
+ * 1. NODE_ENV must be exactly 'development'
  * 2. DEV_AUTH_BYPASS env var must be explicitly set to 'true'
  *
- * This double-gate ensures the bypass can never accidentally work in production.
+ * This double-gate restricts the bypass to explicitly configured development.
  *
  * @returns The first user in the database or null
  */
 export async function getDevUser(): Promise<AuthUser | null> {
   // SECURITY: Never allow in production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV !== 'development') {
     logger.error('[SECURITY] getDevUser called in production! This should never happen.');
     return null;
   }
@@ -182,11 +182,11 @@ export async function getDevUser(): Promise<AuthUser | null> {
  * Get current user with fallback to dev user in development
  *
  * SECURITY: The fallback only works when:
- * 1. NODE_ENV !== 'production' AND
+ * 1. NODE_ENV === 'development' AND
  * 2. DEV_AUTH_BYPASS === 'true' (explicit opt-in)
  *
  * This ensures the bypass can never accidentally work in production,
- * even if someone misconfigures NODE_ENV.
+ * when the process is running outside the development environment.
  *
  * @returns The authenticated user or dev user in development (with explicit opt-in)
  */
@@ -200,7 +200,7 @@ export async function getUserWithDevFallback(): Promise<AuthUser | null> {
 
   // In development with explicit bypass, fall back to first user
   // SECURITY: getDevUser has its own gates (NODE_ENV + DEV_AUTH_BYPASS)
-  if (process.env.NODE_ENV !== 'production' && process.env.DEV_AUTH_BYPASS === 'true') {
+  if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
     return getDevUser();
   }
 
