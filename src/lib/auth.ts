@@ -104,31 +104,9 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  // Generate a secret for development if not set
-  // SECURITY: In production, NEXTAUTH_SECRET MUST be set at runtime
-  // Note: We check process.env at runtime, not at build time
-  secret: process.env.NEXTAUTH_SECRET || (() => {
-    // Allow build to proceed without secret
-    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
-      // At runtime in production, this will use the env var or fail on auth operations
-      console.warn(
-        '[SECURITY] NEXTAUTH_SECRET not set. Authentication will fail in production. ' +
-        'Generate one with: openssl rand -base64 32'
-      );
-    }
-    return 'dev-secret-not-for-production-use';
-  })(),
-
-  // WO-0015: Validate NEXTAUTH_URL in production
-  // This is critical for OAuth callbacks and redirects
-  ...(process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL && {
-    // Log warning but don't throw - let NextAuth handle it
-    _nextAuthUrlWarning: console.warn(
-      '[SECURITY] NEXTAUTH_URL not set in production. ' +
-      'OAuth callbacks may not work correctly. ' +
-      'Set NEXTAUTH_URL to your production domain (e.g., https://yourdomain.com)'
-    ),
-  }),
+  // No fixed fallback. NextAuth v4 rejects a missing secret in production.
+  // Generate and configure a unique NEXTAUTH_SECRET before deployment.
+  secret: process.env.NEXTAUTH_SECRET || undefined,
 };
 
 // Extend NextAuth types
