@@ -25,7 +25,7 @@ export async function GET() {
       {
         status: 'error',
         database: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Servicio temporalmente no disponible',
         timestamp: new Date().toISOString(),
       },
       { status: 503 }
