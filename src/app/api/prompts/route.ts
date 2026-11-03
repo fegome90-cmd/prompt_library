@@ -11,7 +11,7 @@ import { randomUUID } from 'crypto';
 import { createPromptSchema, formatZodError } from '@/lib/validators/prompt';
 import { applyRateLimit } from '@/services/rate-limit.service';
 import { AuditService } from '@/services/audit.service';
-import { getUserWithDevFallback } from '@/lib/auth-utils';
+import { getUserWithDevFallback, getCurrentUser, hasRole } from '@/lib/auth-utils';
 import { createErrorResponse } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
@@ -27,6 +27,16 @@ export async function GET(request: NextRequest) {
 
     // Filtros existentes
     const status = searchParams.get('status');
+    const reader = await getCurrentUser();
+    const allowedStatuses = ['published', 'draft', 'review', 'deprecated'];
+
+    if (status && !allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Estado inválido' }, { status: 400 });
+    }
+    if (status && status !== 'published' && !reader) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const favorites = searchParams.get('favorites') === 'true';
@@ -36,8 +46,13 @@ export async function GET(request: NextRequest) {
     if (status) {
       where.status = status;
     } else {
-      // Por defecto mostrar solo publicados
+      // Public view exposes published prompts only.
       where.status = 'published';
+    }
+
+    // Non-privileged users may only inspect their own or assigned private prompts.
+    if (status && status !== 'published' && reader && !hasRole(reader, ['owner', 'editor'])) {
+      where.AND = [{ OR: [{ authorId: reader.id }, { reviewerId: reader.id }] }];
     }
 
     if (category) {
@@ -85,7 +100,7 @@ export async function GET(request: NextRequest) {
           take: limit,
           include: {
             User_Prompt_authorIdToUser: {
-              select: { id: true, name: true, email: true },
+              select: { id: true, name: true },
             },
             category: true,
           },
@@ -108,7 +123,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         User_Prompt_authorIdToUser: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
         category: true,
       },
@@ -194,7 +209,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         User_Prompt_authorIdToUser: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
         category: {
           select: { id: true, name: true },
