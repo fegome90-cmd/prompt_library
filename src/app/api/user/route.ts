@@ -1,30 +1,22 @@
-import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
-import { createErrorResponse } from '@/lib/api-utils';
+import { getCurrentUser } from '@/lib/auth-utils';
 
-// GET - Obtener usuario por defecto (simplificado sin auth)
+/**
+ * Return the current authenticated user's safe profile.
+ * Never create an owner account from a GET request or disclose password hashes.
+ */
 export async function GET() {
-  try {
-    let user = await db.user.findFirst({
-      where: { email: 'admin@empresa.com' },
-    });
-    
-    // Crear usuario por defecto si no existe
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          id: randomUUID(),
-          email: 'admin@empresa.com',
-          name: 'Administrador',
-          role: 'owner',
-          updatedAt: new Date(),
-        },
-      });
-    }
-    
-    return NextResponse.json(user);
-  } catch (error) {
-    return createErrorResponse(error, 'Error al obtener usuario');
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
+
+  return NextResponse.json({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    image: user.image ?? null,
+  });
 }
