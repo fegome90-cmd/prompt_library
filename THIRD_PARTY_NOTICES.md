@@ -47,7 +47,7 @@ Antes de incorporar o redistribuir el contenido completo de una skill externa, r
 ## Dependencias y otros materiales
 
 - Las dependencias declaradas en `package.json` y `bun.lock` mantienen las licencias de sus respectivos proveedores; no se relicencian mediante el archivo MIT de este repositorio.
-- Las bases de datos versionadas `db/custom.db` y `prisma/dev.db` **no** se ofrecen mediante la licencia MIT del código. Su procedencia y contenido requieren una auditoría independiente antes de cualquier reutilización, publicación o distribución.
+- Las bases de datos `db/custom.db` y `prisma/dev.db` estuvieron versionadas y pueden persistir en el historial de Git. **No** se ofrecen mediante la licencia MIT del código; su contenido requiere tratamiento separado y eventual depuración del historial.
 - Los logotipos, marcas, imágenes y otros recursos visuales bajo `public/` no reciben una licencia de uso de marca ni de imagen por el solo hecho de que el código se publique bajo MIT. Verificar procedencia y permisos antes de redistribuirlos.
 
 Este documento identifica procedencias relevantes detectadas durante la revisión inicial; **no constituye una auditoría exhaustiva** de todos los archivos del repositorio.
