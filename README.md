@@ -117,3 +117,9 @@ src/
 ```
 
 ---
+
+## Licencia y procedencia
+
+El código y la documentación originales de este proyecto se distribuyen bajo la [licencia MIT](./LICENSE), exclusivamente en la medida en que sus titulares puedan licenciarlos. El repositorio incluye componentes de terceros y recursos cuya licencia debe revisarse por separado; consulta [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+
+La procedencia de la skill local `skill-creator` se documenta en [docs/SKILL_CREATOR_PROVENANCE.md](./docs/SKILL_CREATOR_PROVENANCE.md).
