@@ -72,8 +72,11 @@ describe('canModifyPrompt', () => {
     expect(canModifyPrompt(editorUser, 'any-author-id')).toBe(true);
   });
 
-  it('reviewer can modify any prompt', () => {
-    expect(canModifyPrompt(reviewerUser, 'any-author-id')).toBe(true);
+  it('reviewer can edit their own or explicitly assigned prompt only', () => {
+    expect(canModifyPrompt(reviewerUser, '3')).toBe(true);
+    expect(canModifyPrompt(reviewerUser, 'another-author', '3')).toBe(true);
+    expect(canModifyPrompt(reviewerUser, 'another-author', 'other-reviewer')).toBe(false);
+    expect(canModifyPrompt(reviewerUser, 'another-author')).toBe(false);
   });
 
   it('user can only modify own prompt', () => {
