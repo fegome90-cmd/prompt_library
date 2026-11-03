@@ -102,12 +102,15 @@ POST /api/prompts → {"error":"No autorizado"} ✅
 
 ## 5. Configuración de Usuario Admin
 
-```
-Email: admin@empresa.com
-Password: Admin123!
-```
+El script `scripts/seed.ts` ya no proporciona una credencial compartida.
 
-**⚠️ IMPORTANTE:** Cambiar password en producción!
+Para crear el administrador inicial, define `SEED_ADMIN_EMAIL` y
+`SEED_ADMIN_PASSWORD` (mínimo 16 caracteres) en un archivo `.env`
+**no versionado** antes de ejecutar el seed. No publiques contraseñas reales,
+hashes ni volcados de bases de datos en el repositorio.
+
+Las credenciales creadas antes de esta corrección deben rotarse expresamente;
+cambiar el script no invalida una contraseña que ya existe en una base de datos.
 
 ---
 
