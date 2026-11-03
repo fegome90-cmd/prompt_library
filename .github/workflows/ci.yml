@@ -94,7 +94,7 @@ jobs:
           bun run db:push
           SEED_ADMIN_EMAIL="ci-admin@example.invalid" SEED_ADMIN_PASSWORD="$(openssl rand -base64 36)" NODE_ENV=test bun run scripts/seed.ts
       - name: Production Build Check
-        run: bun run build
-        env:
-          NEXTAUTH_SECRET: "${{ secrets.NEXTAUTH_SECRET_CI || 'CI-ONLY-SECRET-REPLACE-IN-DEPLOYMENTS-DO-NOT-USE' }}"
-          NEXTAUTH_URL: http://localhost:3000
+        run: |
+          export NEXTAUTH_SECRET="$(openssl rand -base64 32)"
+          export NEXTAUTH_URL="http://localhost:3000"
+          bun run build
